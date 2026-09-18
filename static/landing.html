@@ -22,6 +22,21 @@
   --ease:cubic-bezier(.22,.61,.36,1);
   --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
   --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  --nav-bg:rgba(10,12,16,.72);
+  --hover-line:rgba(255,255,255,.28);
+  --card-hover:var(--panel);
+  color-scheme:dark;
+}
+html[data-theme="light"]{
+  --bg:#f6f7f8; --bg-2:#eef0f2; --panel:#ffffff;
+  --line:rgba(10,12,16,.10);
+  --white:#16181d; --gray:#5a606c; --gray-2:#8a909b;
+  --fire:#e8481a; --fire-soft:rgba(232,72,26,.10);
+  --ice:#1c7cc4; --ice-soft:rgba(28,124,196,.10);
+  --nav-bg:rgba(246,247,248,.78);
+  --hover-line:rgba(10,12,16,.30);
+  --card-hover:#ffffff;
+  color-scheme:light;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -48,7 +63,7 @@ h2{font-size:clamp(34px,5vw,64px);font-weight:650;letter-spacing:-.03em;line-hei
 /* ============ NAV ============ */
 nav{position:fixed;top:0;left:0;right:0;z-index:100;transition:all .45s var(--ease)}
 nav .inner{max-width:1200px;margin:0 auto;padding:26px 32px;display:flex;align-items:center;justify-content:space-between;transition:all .45s var(--ease)}
-nav.scrolled{background:rgba(10,12,16,.72);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
+nav.scrolled{background:var(--nav-bg);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
 nav.scrolled .inner{padding:14px 32px}
 .brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:17px;letter-spacing:-.02em}
 .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--fire);box-shadow:0 0 12px var(--fire)}
@@ -56,8 +71,10 @@ nav.scrolled .inner{padding:14px 32px}
 .nav-links a{transition:color .25s}
 .nav-links a:hover{color:var(--white)}
 .nav-cta{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--white);border:1px solid var(--line);padding:8px 18px;border-radius:99px;transition:all .3s var(--ease)}
-.nav-cta:hover{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.04)}
+.nav-cta:hover{border-color:var(--hover-line);background:rgba(127,127,127,.06)}
 .status-chip{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;color:var(--gray)}
+.theme-toggle{width:36px;height:36px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--gray);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s var(--ease);font-size:15px;line-height:1}
+.theme-toggle:hover{color:var(--white);border-color:var(--hover-line)}
 @media(max-width:820px){.nav-links,.status-chip{display:none}}
 
 /* ============ HERO ============ */
@@ -74,7 +91,7 @@ nav.scrolled .inner{padding:14px 32px}
 .btn-primary{background:var(--fire);color:#fff}
 .btn-primary:hover{background:#ff6d38;transform:translateY(-1px);box-shadow:0 12px 40px -8px rgba(255,90,31,.45)}
 .btn-ghost{color:var(--gray);border:1px solid var(--line)}
-.btn-ghost:hover{color:var(--white);border-color:rgba(255,255,255,.28)}
+.btn-ghost:hover{color:var(--white);border-color:var(--hover-line)}
 .arrow{transition:transform .3s var(--ease)}
 .btn:hover .arrow,.link-arrow:hover .arrow{transform:translateX(4px)}
 
@@ -91,7 +108,7 @@ nav.scrolled .inner{padding:14px 32px}
 @keyframes hvring{0%{transform:translate(-50%,-50%) scale(.25);opacity:1}80%{transform:translate(-50%,-50%) scale(1);opacity:0}100%{opacity:0}}
 .hv-dot{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:var(--fire);box-shadow:0 0 24px var(--fire),0 0 60px rgba(255,90,31,.5);animation:hvblink 4s var(--ease) infinite}
 @keyframes hvblink{0%,100%{opacity:1}50%{opacity:.65}}
-.hv-tag{position:absolute;left:calc(63% + 34px);top:42%;transform:translateY(-50%);background:rgba(10,12,16,.85);backdrop-filter:blur(8px);border:1px solid rgba(255,90,31,.3);border-radius:10px;padding:12px 16px;animation:tagin 1s 1.4s var(--ease) both}
+.hv-tag{position:absolute;left:calc(63% + 34px);top:42%;transform:translateY(-50%);background:var(--nav-bg);backdrop-filter:blur(8px);border:1px solid rgba(255,90,31,.3);border-radius:10px;padding:12px 16px;animation:tagin 1s 1.4s var(--ease) both}
 @keyframes tagin{from{opacity:0;transform:translateY(-50%) translateX(-8px)}to{opacity:1;transform:translateY(-50%)}}
 .hv-tag .t1{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--fire)}
 .hv-tag .t2{font-size:14px;font-weight:650;margin-top:4px}
@@ -194,7 +211,7 @@ section{padding:150px 0}
 /* PORTALS */
 .portal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
 .portal{border:1px solid var(--line);border-radius:20px;padding:46px 38px;background:var(--bg-2);transition:all .45s var(--ease);display:flex;flex-direction:column;min-height:340px}
-.portal:hover{border-color:rgba(255,255,255,.22);transform:translateY(-4px);background:var(--panel)}
+.portal:hover{border-color:var(--hover-line);transform:translateY(-4px);background:var(--card-hover)}
 .portal .pk{font-family:var(--mono);font-size:10.5px;letter-spacing:.22em;color:var(--gray-2)}
 .portal h3{font-size:30px;font-weight:650;letter-spacing:-.02em;margin-top:60px}
 .portal .pv{color:var(--fire);font-size:19px;font-weight:600;margin-top:6px}
@@ -245,8 +262,9 @@ footer{border-top:1px solid var(--line);background:var(--bg-2)}
       <a href="#platform">Platform</a>
     </div>
     <div style="display:flex;align-items:center;gap:22px">
-      <span class="status-chip"><span class="pulse" style="width:7px;height:7px"></span>OPERATIONS LIVE</span>
-      <a class="nav-cta" href="/app">Open Platform <span class="arrow">→</span></a>
+      <span class="status-chip"><span class="pulse" style="width:7px;height:7px"></span>NRT · DEMO DATA</span>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle color theme" title="Toggle light / dark">&#9789;</button>
+      <a class="nav-cta" href="/app">Launch Dashboard <span class="arrow">→</span></a>
     </div>
   </div>
 </nav>
@@ -292,9 +310,9 @@ footer{border-top:1px solid var(--line);background:var(--bg-2)}
       <p class="body-lg">NASA satellites scan India every passing orbit. FireSense ingests each thermal detection the moment it hits the feed — raw heat becomes a tracked event.</p>
     </div>
     <div class="stat-row reveal">
-      <div class="stat fire"><div class="n" data-count="375">0</div><div class="l">Metre VIIRS resolution — every hotspot located to a city block.</div></div>
-      <div class="stat ice"><div class="n" data-count="24">0</div><div class="l">Hours of continuous satellite coverage, refreshed every pass.</div></div>
-      <div class="stat"><div class="n" data-count="60">0</div><div class="l">Day persistence baseline per location, before we call anything unusual.</div></div>
+      <div class="stat fire"><div class="n" data-count="375">375</div><div class="l">Metre VIIRS resolution — every hotspot located to a city block.</div></div>
+      <div class="stat ice"><div class="n" data-count="24">24</div><div class="l">Hours of continuous satellite coverage, refreshed every pass.</div></div>
+      <div class="stat"><div class="n" data-count="60">60</div><div class="l">Day persistence baseline per location, before we call anything unusual.</div></div>
     </div>
   </div>
 </section>
@@ -320,7 +338,7 @@ footer{border-top:1px solid var(--line);background:var(--bg-2)}
         <span class="cb-chip">POWER PLANT</span>
         <span class="cb-chip">CROP BURNING</span>
         <span class="cb-chip">MINING</span>
-        <span class="cb-chip">CLANDESTINE</span>
+        <span class="cb-chip" title="Unregistered thermal source: high persistence with no registered facility in OSM">UNREGISTERED</span>
       </div>
     </div>
   </div>
@@ -357,8 +375,9 @@ footer{border-top:1px solid var(--line);background:var(--bg-2)}
   <div class="container">
     <div class="risk-wrap">
       <div class="reveal">
-        <div class="risk-number" data-count="87">0</div>
-        <div class="risk-label">RISK SCORE · CRITICAL</div>
+        <div class="kicker" style="margin-bottom:18px"><span class="idx">04 /</span> ASSESS</div>
+        <div class="risk-number" data-count="87">87</div>
+        <div class="risk-label">RISK SCORE / 100 · CRITICAL</div>
       </div>
       <div class="reveal">
         <div class="risk-bars">
@@ -494,7 +513,7 @@ footer{border-top:1px solid var(--line);background:var(--bg-2)}
     </div>
   </div>
   <div class="f-bottom">
-    <span class="meta">© 2026 FireSense — From space to action.</span>
+    <span class="meta">© 2026 FireSense — From space to action. &nbsp;Built for SIH26162 (NTRO) · Demo environment · Data: NASA FIRMS, OSM, ESA WorldCover</span>
     <span class="meta"><a href="/app">Open Platform →</a></span>
   </div>
 </footer>
@@ -502,6 +521,24 @@ footer{border-top:1px solid var(--line);background:var(--bg-2)}
 <script>
 (function(){
   var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* theme: system default, manual override persisted */
+  var root = document.documentElement;
+  var tbtn = document.getElementById('theme-toggle');
+  function applyTheme(t){
+    root.setAttribute('data-theme', t);
+    tbtn.innerHTML = t === 'light' ? '\u2600' : '\u263e';
+    tbtn.setAttribute('title', 'Switch to ' + (t === 'light' ? 'dark' : 'light') + ' theme');
+  }
+  var saved = null;
+  try { saved = localStorage.getItem('fs-theme'); } catch(e){}
+  if (saved === 'light' || saved === 'dark') applyTheme(saved);
+  else if (matchMedia('(prefers-color-scheme: light)').matches) applyTheme('light');
+  tbtn.addEventListener('click', function(){
+    var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+    try { localStorage.setItem('fs-theme', next); } catch(e){}
+  });
 
   // nav scroll state
   var nav = document.getElementById('nav');
@@ -531,6 +568,7 @@ footer{border-top:1px solid var(--line);background:var(--bg-2)}
       if(!e.isIntersecting) return;
       var el = e.target, target = +el.dataset.count, t0 = null, dur = 1400;
       if (reduced) { el.textContent = target; cio.unobserve(el); return; }
+      el.textContent = '0'; /* animation enhances; HTML already carried the real value */
       var step = function(ts){
         if(!t0) t0 = ts;
         var p = Math.min((ts - t0)/dur, 1);

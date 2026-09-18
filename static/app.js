@@ -165,6 +165,9 @@ const translations = {
 
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
+    // deep link: /app?portal=citizen|command|ntro (from landing page CTAs)
+    const qp = new URLSearchParams(location.search).get('portal');
+    if (['ntro', 'command', 'citizen'].includes(qp)) switchPortal(qp);
     renderNtroIncidents();
     renderCmdZones();
     selectZone('angul');
