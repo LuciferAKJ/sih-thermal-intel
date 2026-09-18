@@ -1,4 +1,4 @@
-﻿# 🔥 FireSense (AeroThermal) | SIH26162 (NTRO)
+# 🔥 FireSense (AeroThermal) | SIH26162 (NTRO)
 ### Spaceborne Thermal Intelligence & Autonomous Industrial Disaster Response
 
 [![Production Live](https://img.shields.io/badge/Production-Live-emerald?style=flat-square&logo=vercel)](https://sih-thermal-intel.vercel.app)
@@ -17,12 +17,12 @@
 
 ## 🛰️ Executive Overview
 
-NASA earth-observation satellites (**Suomi NPP / NOAA-20 VIIRS 375m** and **Terra/Aqua MODIS 1km**) register thousands of thermal infrared anomalies across the Indian subcontinent daily. However, raw spaceborne sensors only transmit raw thermal flux pixels ({21}, T_{4}$ brightness temperature and Fire Radiative Power in MW). 
+NASA earth-observation satellites (**Suomi NPP / NOAA-20 VIIRS 375m** and **Terra/Aqua MODIS 1km**) register thousands of thermal infrared anomalies across the Indian subcontinent daily. However, spaceborne sensors only transmit raw thermal flux pixels (brightness temperature and Fire Radiative Power in MW). 
 
 **The Challenge:** Spaceborne sensors cannot inherently tell whether a thermal spike is a scheduled, safe gas flare in an oil refinery (burning at 600°C–1000°C), an uncontrolled catastrophic explosion, agricultural crop burning, or an **unregistered clandestine thermal anomaly** operating outside regulatory oversight.
 
 **FireSense bridges this gap:**
-> **SATELLITE SIGNAL $\longrightarrow$ MULTI-MODEL CLASSIFICATION $\longrightarrow$ ASSETS AT RISK $\longrightarrow$ EMERGENCY DISPATCH**
+> **SATELLITE SIGNAL ⟶ MULTI-MODEL CLASSIFICATION ⟶ ASSETS AT RISK ⟶ EMERGENCY DISPATCH**
 
 FireSense correlates raw satellite thermal pixels with **OpenStreetMap (OSM) vector boundaries**, **ESA WorldCover land-cover matrices**, and a **60-day historical overpass persistence baseline**. It computes composite danger scores, simulates physical blast/evacuation perimeters, routes automated Common Alerting Protocol (CAP) dispatches to nearest fire stations, and coordinates civilian evacuation routes.
 
@@ -30,7 +30,7 @@ FireSense correlates raw satellite thermal pixels with **OpenStreetMap (OSM) vec
 
 ## 🏛️ System Architecture & Data Pipeline
 
-`
+```text
                                   [DATA SOURCES]
                  NASA FIRMS (VIIRS 375m / MODIS)  +  OSM Overpass API
                                          │
@@ -60,7 +60,7 @@ FireSense correlates raw satellite thermal pixels with **OpenStreetMap (OSM) vec
     • Telemetry Dossiers & FRP Charts               • Geofenced Evacuation Routes
     • One-Click Emergency Station Dispatch          • Crowdsourced Smoke Verification
     • PDF Executive & GeoJSON GIS Export            • Designated Emergency Shelters
-`
+```
 
 ---
 
@@ -72,8 +72,8 @@ FireSense correlates raw satellite thermal pixels with **OpenStreetMap (OSM) vec
 | **02** | **CLASSIFY** | Multi-feature heuristics distinguish Industrial Gas Flares, Thermal Plants, Coal Stockyard Fires, Stubble Burns, Wildfires, and Unregistered Clandestine Operations with an explicit explainability evidence panel. |
 | **03** | **CONTEXTUALIZE** | Cross-references spatial coordinates with OpenStreetMap vector boundaries and computes a 60-day historical recurrence baseline for that specific 375m cell. |
 | **04** | **ASSESS** | Calculates a 0–100 Composite Danger Score, generates Assets-at-Risk dossiers (population centers, highways, hospitals), and simulates wind-driven smoke/evacuation plumes. |
-| **05** | **RESPOND** | Generates authoritative Incident Tickets (#INC-2026-0042) and triggers simulated encrypted dispatches to nearest emergency authorities (e.g., Jamnagar Disaster Control, Baripada Fire Station). |
-| **06** | **TRACK & FEEDBACK** | Dual-view operations: Control Room Commander overview and First Responder Mobile Field Terminal (Acknowledge $\to$ En Route $\to$ Arrived $\to$ Contained $\to$ Resolved). |
+| **05** | **RESPOND** | Generates authoritative Incident Tickets (`#INC-2026-0042`) and triggers simulated encrypted dispatches to nearest emergency authorities (e.g., Jamnagar Disaster Control, Baripada Fire Station). |
+| **06** | **TRACK & FEEDBACK** | Dual-view operations: Control Room Commander overview and First Responder Mobile Field Terminal (`Acknowledge` → `En Route` → `Arrived` → `Contained` → `Resolved`). |
 
 ---
 
@@ -96,15 +96,15 @@ FireSense includes pre-cached real-world operational scenarios for live demonstr
 - Any modern web browser (Edge, Chrome, Firefox, Safari)
 
 ### 1. Clone the repository:
-`ash
+```bash
 git clone https://github.com/PaliiiXRAY/sih-thermal-intel.git
 cd sih-thermal-intel
-`
+```
 
 ### 2. Launch the server:
-`ash
+```bash
 python app.py
-`
+```
 
 ### 3. Open in Browser:
 - **Cinematic Landing Page:** [http://localhost:5002](http://localhost:5002)
@@ -116,18 +116,18 @@ python app.py
 
 | Endpoint | Method | Description |
 | :--- | :--- | :--- |
-| /api/pipeline/scenario?id={scenario_id} | GET | Runs end-to-end pipeline on selected operational scenario (&live_osm=1 enables live Overpass query). |
-| /api/live?map_key={KEY}&bbox={BBOX} | GET | Ingests live NASA FIRMS NRT data for a specified bounding box. |
-| /api/stats | GET | Returns aggregated metrics (active hotspots, critical alerts, resolved incidents). |
-| /api/incident/{id}/dispatch | POST | Dispatches emergency responders and transitions incident to DISPATCHED. |
-| /api/incident/{id}/status | POST | Advances incident state (NEW $\to$ INVESTIGATING $\to$ VERIFIED $\to$ CONTAINED $\to$ RESOLVED). |
-| /api/export/geojson | GET | Exports complete incident layers as GIS-ready GeoJSON FeatureCollection. |
+| `/api/pipeline/scenario?id={scenario_id}` | `GET` | Runs end-to-end pipeline on selected operational scenario (`&live_osm=1` enables live Overpass query). |
+| `/api/live?map_key={KEY}&bbox={BBOX}` | `GET` | Ingests live NASA FIRMS NRT data for a specified bounding box. |
+| `/api/stats` | `GET` | Returns aggregated metrics (active hotspots, critical alerts, resolved incidents). |
+| `/api/incident/{id}/dispatch` | `POST` | Dispatches emergency responders and transitions incident to `DISPATCHED`. |
+| `/api/incident/{id}/status` | `POST` | Advances incident state (`NEW` → `INVESTIGATING` → `VERIFIED` → `CONTAINED` → `RESOLVED`). |
+| `/api/export/geojson` | `GET` | Exports complete incident layers as GIS-ready GeoJSON FeatureCollection. |
 
 ---
 
 ## 📁 Repository Structure
 
-`
+```text
 sih-thermal-intel/
 ├── app.py                     # Core server & REST API router (Port 5002)
 ├── backend/
@@ -153,16 +153,16 @@ sih-thermal-intel/
 │   └── run_tests.py           # 27 automated test assertions
 ├── requirements.txt           # Python dependencies (for serverless deployments)
 └── vercel.json                # Vercel production edge deployment configuration
-`
+```
 
 ---
 
 ## 🧪 Automated Testing
 
 Run the built-in test suite covering classification heuristics, persistence calculations, parser integrity, and API schemas:
-`ash
+```bash
 python tests/run_tests.py
-`
+```
 *(All 27 test assertions validate zero-regression behavior).*
 
 ---
