@@ -238,6 +238,26 @@ section{padding:150px 0}
 .lv-med{background:var(--ice-soft);color:var(--ice)}
 @media(max-width:900px){.context-legend{grid-template-columns:1fr 1fr}}
 
+
+/* evidence bars (CLASSIFY): weighted proof behind the model score */
+.evidence{margin-top:44px;width:100%;max-width:640px;display:flex;flex-direction:column;gap:16px;text-align:left}
+.ev .row{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:7px}
+.ev .row .n{color:var(--white);font-weight:600}
+.ev .row .v{font-family:var(--mono);color:var(--gray)}
+.ev .track{height:3px;background:var(--line);border-radius:99px;overflow:hidden}
+.ev .fill{height:100%;width:0;background:var(--fire);border-radius:99px;transition:width 1.2s var(--ease)}
+.ev.hot .fill{background:var(--fire)}
+.ev.cool .fill{background:var(--ice)}
+.ev-note{margin-top:18px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--gray-2);letter-spacing:.08em}
+/* response state timeline */
+.rs-timeline{display:flex;gap:1px;background:var(--line);border-top:1px solid var(--line)}
+.rs-state{flex:1;background:var(--bg-2);padding:16px 12px;text-align:center;font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--gray-2);position:relative;transition:color .3s}
+.rs-state::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:transparent;transition:background .3s}
+.rs-state.done{color:var(--gray)}
+.rs-state.active{color:var(--fire)}
+.rs-state.active::after{background:var(--fire)}
+/* focus visibility (keyboard) */
+a:focus-visible,button:focus-visible{outline:2px solid var(--fire);outline-offset:3px;border-radius:6px}
 /* RISK: the number is the hero */
 .risk-wrap{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
 .risk-number{font-size:clamp(150px,22vw,280px);font-weight:700;letter-spacing:-.05em;line-height:1;color:var(--fire);font-variant-numeric:tabular-nums}
@@ -352,7 +372,7 @@ footer{border-top:1px solid var(--line);background:var(--bg-2)}
       </div>
       <div class="hv-meta">
         <div><div class="k">LOCATION</div><div class="v">30.7046&deg; N &middot; 76.7104&deg; E</div></div>
-        <div><div class="k">SENSOR</div><div class="v">VIIRS &middot; 375 m</div></div>
+        <div><div class="k" title="Visible/Infrared Imaging Radiometer Suite, 375 m native resolution">SENSOR</div><div class="v" title="Fire Radiative Power: radiant heat output in megawatts">VIIRS &middot; 375 m</div></div>
         <div><div class="k">OBSERVED</div><div class="v">14:32 UTC</div></div>
       </div>
     </div>
@@ -379,9 +399,9 @@ footer{border-top:1px solid var(--line);background:var(--bg-2)}
       <p class="body-lg">NASA satellites scan India every passing orbit. FireSense ingests each thermal detection the moment it hits the feed — raw heat becomes a tracked event.</p>
     </div>
     <div class="stat-row reveal">
-      <div class="stat fire"><div class="n" data-count="375">375</div><div class="l">Metre VIIRS resolution — every hotspot located to a city block.</div></div>
-      <div class="stat ice"><div class="n" data-count="24">24</div><div class="l">Hours of continuous satellite coverage, refreshed every pass.</div></div>
-      <div class="stat"><div class="n" data-count="60">60</div><div class="l">Day persistence baseline per location, before we call anything unusual.</div></div>
+      <div class="stat fire"><div class="n" data-count="375">375</div><div class="l"><span title="Visible/Infrared Imaging Radiometer Suite on the Suomi NPP & NOAA-20 satellites">VIIRS</span> resolution — every hotspot located to a city block.</div></div>
+      <div class="stat ice"><div class="n" data-count="24">24</div><div class="l">Hours of coverage from the <span title="NASA Fire Information for Resource Management System — near-real-time active fire detections">FIRMS</span> feed, refreshed every pass.</div></div>
+      <div class="stat"><div class="n" data-count="60">60</div><div class="l">Day persistence baseline per location <span title="How often a thermal source recurs at the same 375 m cell across satellite passes — stationary flares recur constantly, transient fires do not">(temporal recurrence)</span>, before we call anything unusual.</div></div>
     </div>
   </div>
 </section>
@@ -414,6 +434,13 @@ footer{border-top:1px solid var(--line);background:var(--bg-2)}
         <span class="cb-chip">CROP BURNING</span>
         <span class="cb-chip">MINING</span>
         <span class="cb-chip" title="Unregistered thermal source: high persistence with no registered facility in OSM">UNREGISTERED</span>
+      </div>
+      <div class="evidence">
+        <div class="ev hot"><div class="row"><span class="n">Industrial proximity</span><span class="v">0.12 km &middot; registered refinery</span></div><div class="track"><div class="fill" data-w="94"></div></div></div>
+        <div class="ev hot"><div class="row"><span class="n">Thermal persistence</span><span class="v">48 / 60 passes</span></div><div class="track"><div class="fill" data-w="80"></div></div></div>
+        <div class="ev cool"><div class="row"><span class="n">Land-cover match</span><span class="v">Built-up / industrial</span></div><div class="track"><div class="fill" data-w="88"></div></div></div>
+        <div class="ev"><div class="row"><span class="n">FRP signature</span><span class="v">88.4 MW &middot; steady-state</span></div><div class="track"><div class="fill" data-w="72"></div></div></div>
+        <div class="ev-note">MODEL SCORE 91 &middot; NOT A CALIBRATED PROBABILITY &middot; EVIDENCE DISCLOSED FOR ANALYST REVIEW</div>
       </div>
     </div>
   </div>
@@ -492,6 +519,13 @@ footer{border-top:1px solid var(--line);background:var(--bg-2)}
           <div class="big" id="rs-stat">91%</div>
           <div class="k" id="rs-stat-k">CLASSIFICATION CONFIDENCE</div>
         </div>
+      </div>
+      <div class="rs-timeline" id="rs-timeline">
+        <div class="rs-state" data-s="0">DETECTED</div>
+        <div class="rs-state" data-s="1">VERIFIED</div>
+        <div class="rs-state" data-s="2">DISPATCHED</div>
+        <div class="rs-state" data-s="3">EN ROUTE</div>
+        <div class="rs-state" data-s="4">CONTAINED</div>
       </div>
     </div>
   </div>
@@ -680,6 +714,32 @@ footer{border-top:1px solid var(--line);background:var(--bg-2)}
   var rw = document.querySelector('.risk-bars'); if(rw) bio.observe(rw);
 
   // response view switcher
+  /* classify evidence bars fill when the section becomes visible */
+  var evio = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(!e.isIntersecting) return;
+      e.target.querySelectorAll('.fill').forEach(function(f, i){
+        var w = f.dataset.w;
+        if (reduced) { f.style.transition = 'none'; f.style.width = w + '%'; return; }
+        setTimeout(function(){ f.style.width = w + '%'; }, 140 * i);
+      });
+      evio.unobserve(e.target);
+    });
+  }, {threshold:.4});
+  var evWrap = document.querySelector('.evidence'); if (evWrap) evio.observe(evWrap);
+
+  /* response timeline mirrors the active view */
+  var TIMELINE = [0, 2, 4]; // analyst -> verified, command -> dispatched, field -> en route/contained
+  function syncTimeline(v){
+    var states = document.querySelectorAll('.rs-state');
+    var upto = TIMELINE[v];
+    states.forEach(function(s, i){
+      s.classList.toggle('active', i === upto);
+      s.classList.toggle('done', i < upto);
+    });
+  }
+  syncTimeline(0);
+
   var VIEWS = [
     {t:'Industrial Fire — Classified', d:'Evidence panel: facility proximity HIGH, persistence HIGH, FRP 42.8 MW. Counter-evidence disclosed for analyst review.', s:'91%', k:'CLASSIFICATION CONFIDENCE'},
     {t:'Dispatch NDRF Team 3/4', d:'Assets at risk: 82K population, power corridor, NH-55. Downwind corridor 2.1 km. Authority: Odisha Disaster Management.', s:'87', k:'RISK SCORE · CRITICAL'},
@@ -696,6 +756,7 @@ footer{border-top:1px solid var(--line);background:var(--bg-2)}
       document.getElementById('rs-desc').textContent = v.d;
       document.getElementById('rs-stat').textContent = v.s;
       document.getElementById('rs-stat-k').textContent = v.k;
+      syncTimeline(+tab.dataset.v);
       if (!reduced){
         body.style.opacity = 0; body.style.transform = 'translateY(8px)';
         requestAnimationFrame(function(){
