@@ -511,8 +511,19 @@ footer{border-top:1px solid var(--line);background:var(--bg-2)}
   // scroll reveal (single observer, GPU-friendly)
   var io = new IntersectionObserver(function(entries){
     entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
-  }, {threshold:.18, rootMargin:'0px 0px -40px 0px'});
+  }, {threshold:.15, rootMargin:'0px 0px -40px 0px'});
   document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+  // failsafe: never leave a section stuck invisible (fast flicks, anchor jumps, IO misses)
+  var sweep = function(){
+    document.querySelectorAll('.reveal:not(.in)').forEach(function(el){
+      var r = el.getBoundingClientRect();
+      if (r.top < innerHeight * 0.92 && r.bottom > 0) el.classList.add('in');
+      else if (r.bottom < 0) el.classList.add('in'); // scrolled past entirely
+    });
+  };
+  addEventListener('scroll', sweep, {passive:true});
+  addEventListener('load', sweep);
+  setTimeout(sweep, 800);
 
   // count-up numbers (once, on view)
   var cio = new IntersectionObserver(function(entries){
