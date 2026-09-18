@@ -1,121 +1,174 @@
-# AeroThermal | SIH26162 (NTRO)
-### Satellite-to-Ground Disaster Management & Persistent Thermal Anomaly Intelligence
+﻿# 🔥 FireSense (AeroThermal) | SIH26162 (NTRO)
+### Spaceborne Thermal Intelligence & Autonomous Industrial Disaster Response
+
+[![Production Live](https://img.shields.io/badge/Production-Live-emerald?style=flat-square&logo=vercel)](https://sih-thermal-intel.vercel.app)
+[![Problem Statement](https://img.shields.io/badge/SIH-SIH26162-orange?style=flat-square)](https://sih-thermal-intel.vercel.app)
+[![Agency](https://img.shields.io/badge/Agency-NTRO-blue?style=flat-square)](https://sih-thermal-intel.vercel.app)
+[![Data Source](https://img.shields.io/badge/Satellite-NASA%20FIRMS%20VIIRS%20375m-red?style=flat-square)](https://firms.modaps.eosdis.nasa.gov/)
+[![Python](https://img.shields.io/badge/Backend-Python%203.10+-3776ab?style=flat-square&logo=python)](https://python.org)
 
 > **Live Production Platform:** [https://sih-thermal-intel.vercel.app](https://sih-thermal-intel.vercel.app)  
+> **Tactical Operations Dashboard:** [https://sih-thermal-intel.vercel.app/app](https://sih-thermal-intel.vercel.app/app)  
 > **Problem Statement ID:** SIH26162  
 > **Ministry / Organization:** National Technical Research Organisation (NTRO)  
-> **Domain:** Miscellaneous / Geospatial Disaster Intelligence  
+> **Domain:** Geospatial Intelligence, Defense, & Industrial Disaster Response  
 
 ---
 
-## 🛰️ What is AeroThermal?
-NASA satellites (VIIRS / MODIS) detect thousands of thermal infrared anomalies across India daily. However, spaceborne sensors cannot distinguish whether a heat signature is a legitimate refinery gas flare, dangerous crop residue smoke, a spreading forest wildfire, or an **unregistered clandestine industrial operation**.
+## 🛰️ Executive Overview
 
-**AeroThermal converts raw NASA satellite thermal pixels into prioritized, actionable incident dossiers, identifies nearby villages and critical infrastructure at risk, routes alerts to local fire stations, and tracks the response until resolution.**
+NASA earth-observation satellites (**Suomi NPP / NOAA-20 VIIRS 375m** and **Terra/Aqua MODIS 1km**) register thousands of thermal infrared anomalies across the Indian subcontinent daily. However, raw spaceborne sensors only transmit raw thermal flux pixels ({21}, T_{4}$ brightness temperature and Fire Radiative Power in MW). 
+
+**The Challenge:** Spaceborne sensors cannot inherently tell whether a thermal spike is a scheduled, safe gas flare in an oil refinery (burning at 600°C–1000°C), an uncontrolled catastrophic explosion, agricultural crop burning, or an **unregistered clandestine thermal anomaly** operating outside regulatory oversight.
+
+**FireSense bridges this gap:**
+> **SATELLITE SIGNAL $\longrightarrow$ MULTI-MODEL CLASSIFICATION $\longrightarrow$ ASSETS AT RISK $\longrightarrow$ EMERGENCY DISPATCH**
+
+FireSense correlates raw satellite thermal pixels with **OpenStreetMap (OSM) vector boundaries**, **ESA WorldCover land-cover matrices**, and a **60-day historical overpass persistence baseline**. It computes composite danger scores, simulates physical blast/evacuation perimeters, routes automated Common Alerting Protocol (CAP) dispatches to nearest fire stations, and coordinates civilian evacuation routes.
 
 ---
 
-## 🧱 The 6-Module Operational Architecture
-1. **Module 1: DETECT** — Ingestion of NASA FIRMS VIIRS 375m active fire telemetry (Fire Radiative Power, Brightness Temperature, Acquisition Timestamp).
-2. **Module 2: CLASSIFY & EXPLAIN** — Distinguishes Wildfires, Agricultural Stubble Burns, Industrial Flares, and Clandestine Anomalies with an explicit evidence/counter-evidence panel.
-3. **Module 3: CONTEXTUALIZE** — Correlates coordinates with OpenStreetMap (OSM) vector boundaries and a 60-day local historical baseline for this specific 375m cell.
-4. **Module 4: ASSESS (RISK ENGINE)** — Calculates a Composite Danger Score (0-100), builds an Assets-at-Risk Table (population exposure, highways, healthcare), and computes a Downwind Impact Zone.
-5. **Module 5: RESPOND & DISPATCH** — Generates Incident Tickets (`#INC-2026-0042`) and triggers simulated encrypted dispatches to nearest emergency authorities (e.g. Baripada Fire Station).
-6. **Module 6: TRACK & FEEDBACK** — Provides a dual-view interface: Control Room Commander view and First Responder Mobile Field Terminal (`Acknowledge` $\to$ `En Route` $\to$ `Arrived` $\to$ `Contained` $\to$ `Resolved`).
+## 🏛️ System Architecture & Data Pipeline
+
+`
+                                  [DATA SOURCES]
+                 NASA FIRMS (VIIRS 375m / MODIS)  +  OSM Overpass API
+                                         │
+                                         ▼
+                             [INGESTION & SPATIAL ENGINE]
+                 • Coordinate Projection & Bounding Box Filtering
+                 • 60-Day Temporal Cell Persistence Engine
+                 • ESA WorldCover 10m Land-Cover Masking
+                                         │
+                                         ▼
+                             [AI CLASSIFICATION ENGINE]
+                 • Multi-Feature Thermal Classifier (FRP, Temp, Day/Night)
+                 • Facility Geofence Intersection (Refineries, Plants, Mines)
+                 • Classifies: Flare vs Runaway Fire vs Stubble vs Wildfire vs Clandestine
+                                         │
+                                         ▼
+                            [RISK & INCIDENT STATE MACHINE]
+                 • Composite Danger Score (0 - 100)
+                 • Blast Radius & Evacuation Perimeters (500m / 1.5km / 3km)
+                 • Incident Lifecycle: NEW → VERIFIED → DISPATCHED → CONTAINED → RESOLVED
+                                         │
+                 ┌───────────────────────┴───────────────────────┐
+                 ▼                                               ▼
+    [TACTICAL COMMAND CONSOLE]                      [PUBLIC SAFETY & ADVISORY]
+    (Control Room & First Responders)               (Civilian Transparency)
+    • High-Density Interactive Map                  • Real-Time Incident Bulletins
+    • Telemetry Dossiers & FRP Charts               • Geofenced Evacuation Routes
+    • One-Click Emergency Station Dispatch          • Crowdsourced Smoke Verification
+    • PDF Executive & GeoJSON GIS Export            • Designated Emergency Shelters
+`
+
+---
+
+## 🧱 The 6-Module Operational Breakdown
+
+| Module | Name | Function & Deliverables |
+| :--- | :--- | :--- |
+| **01** | **DETECT** | Ingests NASA FIRMS VIIRS 375m active fire telemetry (Fire Radiative Power, Brightness Temperature, Acquisition Timestamp, Scan Angle). |
+| **02** | **CLASSIFY** | Multi-feature heuristics distinguish Industrial Gas Flares, Thermal Plants, Coal Stockyard Fires, Stubble Burns, Wildfires, and Unregistered Clandestine Operations with an explicit explainability evidence panel. |
+| **03** | **CONTEXTUALIZE** | Cross-references spatial coordinates with OpenStreetMap vector boundaries and computes a 60-day historical recurrence baseline for that specific 375m cell. |
+| **04** | **ASSESS** | Calculates a 0–100 Composite Danger Score, generates Assets-at-Risk dossiers (population centers, highways, hospitals), and simulates wind-driven smoke/evacuation plumes. |
+| **05** | **RESPOND** | Generates authoritative Incident Tickets (#INC-2026-0042) and triggers simulated encrypted dispatches to nearest emergency authorities (e.g., Jamnagar Disaster Control, Baripada Fire Station). |
+| **06** | **TRACK & FEEDBACK** | Dual-view operations: Control Room Commander overview and First Responder Mobile Field Terminal (Acknowledge $\to$ En Route $\to$ Arrived $\to$ Contained $\to$ Resolved). |
+
+---
+
+## ⚡ Pre-Cached Operational Indian Scenarios
+
+FireSense includes pre-cached real-world operational scenarios for live demonstrations without requiring active satellite flyover timing:
+
+1. **Jamnagar Refinery Complex (Gujarat):** Normal high-FRP industrial flare stack verified against licensed petrochemical polygon vs runaway storage tank fire.
+2. **Similipal Biosphere Reserve (Odisha):** Rapidly expanding forest canopy wildfire encroaching on tribal settlements and wildlife corridors.
+3. **Angul Super Thermal Power Plant (Odisha):** Coal stockyard spontaneous combustion event adjacent to residential worker quarters.
+4. **Sangrur Agricultural Belt (Punjab):** Post-monsoon seasonal stubble burning cluster with air quality impact modeling.
+5. **Clandestine Thermal Anomaly (Mineral Belt):** High-heat anomaly with zero industrial registration in dense forest cover, flagged for tactical investigation.
 
 ---
 
 ## 🚀 Quick Start (Running Locally)
 
 ### Prerequisites:
-* Python 3.10+
-* Any web browser
+- Python 3.10 or higher
+- Any modern web browser (Edge, Chrome, Firefox, Safari)
 
-### Run the server:
-```bash
-# 1. Clone the repository
-git clone <YOUR_REPO_URL>
+### 1. Clone the repository:
+`ash
+git clone https://github.com/PaliiiXRAY/sih-thermal-intel.git
 cd sih-thermal-intel
+`
 
-# 2. Run the HTTP server (Zero external dependencies needed!)
+### 2. Launch the server:
+`ash
 python app.py
-```
+`
 
-Open your browser and navigate to:  
-👉 **`http://localhost:5002`**
+### 3. Open in Browser:
+- **Cinematic Landing Page:** [http://localhost:5002](http://localhost:5002)
+- **Tactical Control Room Dashboard:** [http://localhost:5002/app](http://localhost:5002/app)
 
-### Live Hotspot Classification API (Problem Statement core deliverable)
-The full pipeline — **NASA FIRMS hotspot -> OSM facility/land-use context -> 60-day
-temporal persistence -> ESA WorldCover land-cover -> AI classification** — runs end-to-end:
+---
 
-```
-# Demo mode: pipeline over pre-cached operational scenarios
-curl "http://localhost:5002/api/pipeline/scenario?id=jamnagar_refinery"
-#  (also: punjab_stubble | similipal_wildfire | angul_thermal_plant | clandestine_thermal_anomaly)
-#  add &live_osm=1 to resolve context LIVE via the OpenStreetMap Overpass API
+## 📡 REST API Endpoints
 
-# Live mode: real FIRMS detections for a bounding box (free MAP_KEY from FIRMS)
-curl "http://localhost:5002/api/live?map_key=YOUR_FIRMS_KEY&bbox=6,68,36,98&source=viirs&days=1"
-```
-
-The response is a map-ready GeoJSON FeatureCollection where each hotspot carries its
-FIRMS metrics, OSM facility match, persistence score, WorldCover land-cover class and the
-final AI classification with evidence — exactly the classes named in SIH26162:
-Industrial Gas Flare, Thermal Power Plant / Coal-handling Fire, Steel / Smelter,
-Mining / Coal Stockyard, Agricultural Stubble Burning, Wildfire, and Unregistered
-Clandestine Anomaly.
+| Endpoint | Method | Description |
+| :--- | :--- | :--- |
+| /api/pipeline/scenario?id={scenario_id} | GET | Runs end-to-end pipeline on selected operational scenario (&live_osm=1 enables live Overpass query). |
+| /api/live?map_key={KEY}&bbox={BBOX} | GET | Ingests live NASA FIRMS NRT data for a specified bounding box. |
+| /api/stats | GET | Returns aggregated metrics (active hotspots, critical alerts, resolved incidents). |
+| /api/incident/{id}/dispatch | POST | Dispatches emergency responders and transitions incident to DISPATCHED. |
+| /api/incident/{id}/status | POST | Advances incident state (NEW $\to$ INVESTIGATING $\to$ VERIFIED $\to$ CONTAINED $\to$ RESOLVED). |
+| /api/export/geojson | GET | Exports complete incident layers as GIS-ready GeoJSON FeatureCollection. |
 
 ---
 
 ## 📁 Repository Structure
-```
+
+`
 sih-thermal-intel/
-├── app.py                     # Core HTTP server exposing REST APIs & static assets (Port 5002)
+├── app.py                     # Core server & REST API router (Port 5002)
 ├── backend/
-│   ├── firms_loader.py        # NASA FIRMS Active Fire data parser
-│   ├── firms_api.py           # LIVE NASA FIRMS API client (firms.modaps.eosdis.nasa.gov)
-│   ├── landcover.py           # ESA WorldCover land-cover class resolver
-│   ├── pipeline.py            # End-to-end hotspot pipeline: FIRMS -> OSM -> persistence -> classify
-│   ├── osm_correlator.py      # OpenStreetMap vector land-use correlator
-│   ├── persistence_engine.py  # 60-day satellite overpass recurrence calculator
-│   ├── classifier.py          # AI classification heuristics & agency routing
-│   ├── incident_engine.py     # State machine & Asset-at-Risk exposure database
+│   ├── firms_loader.py        # NASA FIRMS Active Fire ingestion & parser
+│   ├── firms_api.py           # Live NASA FIRMS client (firms.modaps.eosdis.nasa.gov)
+│   ├── landcover.py           # ESA WorldCover 10m land-cover classification
+│   ├── pipeline.py            # End-to-end processing: FIRMS → OSM → Persistence → Classifier
+│   ├── osm_correlator.py      # OpenStreetMap vector facility correlator
+│   ├── persistence_engine.py  # 60-day temporal cell recurrence calculator
+│   ├── classifier.py          # AI classification heuristics & agency routing logic
+│   ├── incident_engine.py     # Incident state machine & Assets-at-Risk exposure database
 │   └── samples.py             # Pre-cached operational Indian geographic scenarios
 ├── static/
-│   ├── index.html             # High-density dual-view Tactical Dashboard (Control Room & Responder)
-│   ├── app.js                 # Leaflet map, state machine transitions, PDF/GeoJSON exports
-│   └── style.css              # Dark cyber styling & thermal pulse animations
+│   ├── landing.html           # Cinematic Apple/Samsung-inspired landing page
+│   ├── index.html             # High-density Tactical Command Console & Citizen Portal
+│   ├── app.js                 # Leaflet map engine, telemetry graphs, and state transitions
+│   ├── portal-modules.js      # Control room & responder interactive workflow modules
+│   └── style.css              # Theme styling & thermal signature animations
 ├── presentation/
-│   ├── SIH_SLIDES.md          # 7 official SIH PowerPoint slides content
-│   └── DEMO_SCRIPT.md         # 2-minute stage pitch script with judge Q&A defense
-├── SIH_WINNING_TEMPLATE_AEROTHERMAL_SIH26162.pptx  # Official SIH PowerPoint Deck
-├── requirements.txt           # Python dependencies (for cloud serverless)
-└── vercel.json                # Vercel production deployment configuration
-```
+│   ├── SIH_SLIDES.md          # 7 official PowerPoint slides content
+│   └── DEMO_SCRIPT.md         # 3-minute stage pitch script with judge defense Q&A
+├── tests/
+│   └── run_tests.py           # 27 automated test assertions
+├── requirements.txt           # Python dependencies (for serverless deployments)
+└── vercel.json                # Vercel production edge deployment configuration
+`
 
 ---
 
-### Cross-Portal Disaster Workflow
-- **Government Command:** Incident Lifecycle Tracker drives the real backend state machine (NEW → INVESTIGATING → VERIFIED → DISPATCHED → CONTAINED → RESOLVED) with Dispatch/Advance buttons hitting `POST /api/incident/{id}/dispatch` and `/status`, plus a Citizen Reports Inbox.
-- **Citizen Services:** real Leaflet evacuation map (incident zone, safe shelter, NH-55 route) and a crowdsourced "Report Smoke or Fire" form (type, location, GPS) whose reports surface in the Command portal for FIRMS cross-checking.
+## 🧪 Automated Testing
 
-### Tests & Data Output
-```
-python tests/run_tests.py   # 27 assertions: classifier rules, persistence, parser, pipeline, stats
-```
-Dashboard stat cards are computed live from the classification pipeline (`/api/stats`), and any
-pipeline run can be exported as GeoJSON via the **GeoJSON** button (deliverable: data output for GIS).
-
-## 🏆 Presentation Materials
-* **PowerPoint Presentation:** Double-click [`SIH_WINNING_TEMPLATE_AEROTHERMAL_SIH26162.pptx`](SIH_WINNING_TEMPLATE_AEROTHERMAL_SIH26162.pptx) to open in Microsoft PowerPoint or Google Slides.
-* **Stage Pitch Script:** Read [`presentation/DEMO_SCRIPT.md`](presentation/DEMO_SCRIPT.md) for word-for-word instructions on how to deliver the live demo.
+Run the built-in test suite covering classification heuristics, persistence calculations, parser integrity, and API schemas:
+`ash
+python tests/run_tests.py
+`
+*(All 27 test assertions validate zero-regression behavior).*
 
 ---
 
-## 👥 6-Person Team Sprint Execution
-* **Person 1 (Data):** NASA FIRMS telemetry ingestion & preprocessing
-* **Person 2 (Intelligence):** Classification heuristics & Explainability Evidence Engine
-* **Person 3 (GIS):** OpenStreetMap boundaries, Asset-at-Risk queries & downwind impact zones
-* **Person 4 (Backend):** Incident lifecycle state machine & REST API endpoints
-* **Person 5 (Responder):** First Responder dashboard & simulated emergency dispatch workflow
-* **Person 6 (Frontend & Pitch):** Control Room UI integration, map layer sync & presentation delivery
+## 👥 Team & Hackathon Information
+
+- **Event:** Tekathon Final 24-Hour Hackathon (September 2026) / Smart India Hackathon
+- **Team:** FireSense Intel Team
+- **Deployment:** Vercel Edge Serverless ([sih-thermal-intel.vercel.app](https://sih-thermal-intel.vercel.app))
