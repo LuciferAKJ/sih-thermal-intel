@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireSense — From signal to action.</title>
+<meta name="description" content="Satellite thermal intelligence for faster disaster response. Detect, classify, and respond to industrial fires before they become emergencies.">
+<style>
+/* ============ FIRESENSE DESIGN LANGUAGE ============ */
+:root{
+  --bg:#0a0c10;           /* graphite */
+  --bg-2:#0e1117;
+  --panel:#12151d;
+  --line:rgba(255,255,255,.08);
+  --white:#f5f6f7;        /* off-white type */
+  --gray:#8b929e;         /* secondary */
+  --gray-2:#5a606c;
+  --fire:#ff5a1f;         /* warm fire orange */
+  --fire-soft:rgba(255,90,31,.14);
+  --ice:#7ec8f2;          /* satellite ice blue */
+  --ice-soft:rgba(126,200,242,.12);
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--white);font-family:var(--font);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::selection{background:var(--fire);color:#fff}
+a{color:inherit;text-decoration:none}
+.container{max-width:1200px;margin:0 auto;padding:0 32px}
+
+/* type scale */
+.kicker{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--gray);display:flex;align-items:center;gap:12px}
+.kicker .idx{color:var(--fire)}
+h1{font-size:clamp(52px,9vw,110px);font-weight:700;letter-spacing:-.035em;line-height:.98}
+h2{font-size:clamp(34px,5vw,64px);font-weight:650;letter-spacing:-.03em;line-height:1.05}
+.body-lg{font-size:clamp(17px,2vw,21px);color:var(--gray);line-height:1.6;font-weight:400}
+.meta{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--gray-2)}
+
+/* ============ THERMAL PULSE (signature) ============ */
+.pulse{position:relative;width:12px;height:12px;border-radius:50%;background:var(--fire);flex:none}
+.pulse::before,.pulse::after{content:"";position:absolute;inset:0;border-radius:50%;border:1.5px solid var(--fire);animation:tp 3s var(--ease) infinite}
+.pulse::after{animation-delay:1.5s}
+@keyframes tp{0%{transform:scale(1);opacity:.9}70%{transform:scale(4.2);opacity:0}100%{transform:scale(4.2);opacity:0}}
+@media (prefers-reduced-motion:reduce){.pulse::before,.pulse::after{animation:none;opacity:0}}
+
+/* ============ NAV ============ */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;transition:all .45s var(--ease)}
+nav .inner{max-width:1200px;margin:0 auto;padding:26px 32px;display:flex;align-items:center;justify-content:space-between;transition:all .45s var(--ease)}
+nav.scrolled{background:rgba(10,12,16,.72);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
+nav.scrolled .inner{padding:14px 32px}
+.brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:17px;letter-spacing:-.02em}
+.brand .dot{width:8px;height:8px;border-radius:50%;background:var(--fire);box-shadow:0 0 12px var(--fire)}
+.nav-links{display:flex;gap:36px;font-size:14px;color:var(--gray)}
+.nav-links a{transition:color .25s}
+.nav-links a:hover{color:var(--white)}
+.nav-cta{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--white);border:1px solid var(--line);padding:8px 18px;border-radius:99px;transition:all .3s var(--ease)}
+.nav-cta:hover{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.04)}
+.status-chip{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;color:var(--gray)}
+@media(max-width:820px){.nav-links,.status-chip{display:none}}
+
+/* ============ HERO ============ */
+.hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;position:relative;padding:140px 0 80px}
+.hero-eyebrow{margin-bottom:28px;animation:rise 1s var(--ease) both}
+.hero h1{animation:rise 1s .1s var(--ease) both}
+.hero h1 .dim{color:var(--gray-2)}
+.hero-sub{margin-top:30px;max-width:480px;animation:rise 1s .22s var(--ease) both}
+.hero-actions{margin-top:40px;display:flex;gap:16px;align-items:center;animation:rise 1s .32s var(--ease) both}
+@keyframes rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.hero-eyebrow,.hero h1,.hero-sub,.hero-actions{animation:none;opacity:1}}
+
+.btn{display:inline-flex;align-items:center;gap:10px;padding:15px 30px;border-radius:99px;font-size:15px;font-weight:600;transition:all .35s var(--ease);cursor:pointer;border:none}
+.btn-primary{background:var(--fire);color:#fff}
+.btn-primary:hover{background:#ff6d38;transform:translateY(-1px);box-shadow:0 12px 40px -8px rgba(255,90,31,.45)}
+.btn-ghost{color:var(--gray);border:1px solid var(--line)}
+.btn-ghost:hover{color:var(--white);border-color:rgba(255,255,255,.28)}
+.arrow{transition:transform .3s var(--ease)}
+.btn:hover .arrow,.link-arrow:hover .arrow{transform:translateX(4px)}
+
+/* hero detection visual */
+.hero-visual{margin-top:90px;position:relative;border:1px solid var(--line);border-radius:20px;background:
+  radial-gradient(ellipse 60% 55% at 62% 42%, rgba(126,200,242,.05), transparent 65%),
+  linear-gradient(var(--line) 1px, transparent 1px),
+  linear-gradient(90deg, var(--line) 1px, transparent 1px),
+  var(--bg-2);
+  background-size:auto,56px 56px,56px 56px,auto;
+  height:min(52vh,460px);overflow:hidden;animation:rise 1.2s .45s var(--ease) both}
+.hv-crosshair{position:absolute;left:63%;top:42%;transform:translate(-50%,-50%)}
+.hv-ring{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:220px;height:220px;border-radius:50%;border:1px solid rgba(255,90,31,.35);animation:hvring 4s var(--ease) infinite}
+@keyframes hvring{0%{transform:translate(-50%,-50%) scale(.25);opacity:1}80%{transform:translate(-50%,-50%) scale(1);opacity:0}100%{opacity:0}}
+.hv-dot{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:var(--fire);box-shadow:0 0 24px var(--fire),0 0 60px rgba(255,90,31,.5);animation:hvblink 4s var(--ease) infinite}
+@keyframes hvblink{0%,100%{opacity:1}50%{opacity:.65}}
+.hv-tag{position:absolute;left:calc(63% + 34px);top:42%;transform:translateY(-50%);background:rgba(10,12,16,.85);backdrop-filter:blur(8px);border:1px solid rgba(255,90,31,.3);border-radius:10px;padding:12px 16px;animation:tagin 1s 1.4s var(--ease) both}
+@keyframes tagin{from{opacity:0;transform:translateY(-50%) translateX(-8px)}to{opacity:1;transform:translateY(-50%)}}
+.hv-tag .t1{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--fire)}
+.hv-tag .t2{font-size:14px;font-weight:650;margin-top:4px}
+.hv-tag .t3{font-family:var(--mono);font-size:11px;color:var(--gray);margin-top:4px}
+.hv-meta{position:absolute;left:28px;bottom:24px;display:flex;gap:40px}
+.hv-meta div{animation:rise .9s 1.9s var(--ease) both}
+.hv-meta .k{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--gray-2);margin-bottom:6px}
+.hv-meta .v{font-family:var(--mono);font-size:14px;color:var(--white)}
+.hv-scan{position:absolute;top:0;bottom:0;width:1px;background:linear-gradient(180deg,transparent,rgba(126,200,242,.35),transparent);left:20%;animation:scan 9s linear infinite}
+@keyframes scan{0%{left:8%}50%{left:88%}100%{left:8%}}
+@media (prefers-reduced-motion:reduce){.hv-ring,.hv-scan{animation:none;opacity:.35}.hv-tag,.hv-meta div{animation:none;opacity:1}}
+
+/* ============ SECTIONS ============ */
+section{padding:150px 0}
+.section-head{max-width:640px;margin-bottom:70px}
+.section-head h2{margin-top:22px}
+.section-head p{margin-top:22px}
+
+/* reveal on scroll */
+.reveal{opacity:0;transform:translateY(34px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+
+/* DETECT: big stat row */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.stat{background:var(--bg-2);padding:44px 40px}
+.stat .n{font-size:clamp(38px,4.5vw,56px);font-weight:650;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.stat .n .unit{font-size:.45em;color:var(--gray);font-weight:500;margin-left:6px}
+.stat .l{margin-top:10px;font-size:14px;color:var(--gray);line-height:1.5}
+.stat.ice .n{color:var(--ice)}
+.stat.fire .n{color:var(--fire)}
+@media(max-width:820px){.stat-row{grid-template-columns:1fr}}
+
+/* CLASSIFY: transition board */
+.classify-board{border:1px solid var(--line);border-radius:20px;background:var(--bg-2);padding:70px 40px;display:flex;flex-direction:column;align-items:center;gap:0}
+.cb-stage{font-family:var(--mono);letter-spacing:.24em;font-size:clamp(18px,3vw,30px);font-weight:600;text-align:center}
+.cb-stage.anomaly{color:var(--gray-2)}
+.cb-stage.classifying{color:var(--ice)}
+.cb-stage.result{color:var(--fire)}
+.cb-arrow{color:var(--gray-2);font-size:20px;margin:22px 0;line-height:1;animation:cbdown 2.4s var(--ease) infinite}
+@keyframes cbdown{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(6px);opacity:1}}
+@media (prefers-reduced-motion:reduce){.cb-arrow{animation:none;opacity:.7}}
+.cb-classes{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:44px}
+.cb-chip{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;padding:8px 16px;border:1px solid var(--line);border-radius:99px;color:var(--gray);transition:all .3s}
+.cb-chip:hover{border-color:var(--fire);color:var(--fire)}
+.cb-chip.active{border-color:var(--fire);color:var(--fire);background:var(--fire-soft)}
+
+/* CONTEXT: map-ish panel */
+.context-panel{border:1px solid var(--line);border-radius:20px;overflow:hidden;background:var(--bg-2)}
+.context-map{position:relative;height:400px;background:
+  radial-gradient(ellipse 50% 60% at 30% 60%, rgba(255,90,31,.06), transparent 60%),
+  linear-gradient(var(--line) 1px, transparent 1px),
+  linear-gradient(90deg, var(--line) 1px, transparent 1px),
+  var(--bg-2);
+  background-size:auto,64px 64px,64px 64px,auto}
+.cm-node{position:absolute;transform:translate(-50%,-50%);text-align:center}
+.cm-node .pin{width:10px;height:10px;border-radius:50%;margin:0 auto 8px}
+.cm-node .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--gray)}
+.cm-node.incident .pin{background:var(--fire);box-shadow:0 0 18px var(--fire)}
+.cm-node.incident .lbl{color:var(--fire)}
+.cm-node.facility .pin{background:var(--ice)}
+.cm-node.settlement .pin{background:var(--gray)}
+.cm-line{position:absolute;height:1px;background:linear-gradient(90deg,var(--ice),transparent);transform-origin:left center}
+.context-legend{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border-top:1px solid var(--line)}
+.cl-item{background:var(--bg-2);padding:26px 28px}
+.cl-item .k{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--gray-2);margin-bottom:8px}
+.cl-item .v{font-size:16px;font-weight:600}
+.cl-item .v .lv{font-size:11px;font-family:var(--mono);margin-left:8px;padding:2px 8px;border-radius:99px}
+.lv-high{background:var(--fire-soft);color:var(--fire)}
+.lv-med{background:var(--ice-soft);color:var(--ice)}
+@media(max-width:900px){.context-legend{grid-template-columns:1fr 1fr}}
+
+/* RISK: the number is the hero */
+.risk-wrap{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+.risk-number{font-size:clamp(150px,22vw,280px);font-weight:700;letter-spacing:-.05em;line-height:1;color:var(--fire);font-variant-numeric:tabular-nums}
+.risk-label{font-family:var(--mono);letter-spacing:.3em;font-size:14px;color:var(--gray);margin-top:8px}
+.risk-bars{display:flex;flex-direction:column;gap:26px}
+.rb .row{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:10px}
+.rb .row .pc{font-family:var(--mono);color:var(--gray)}
+.rb .track{height:3px;background:var(--line);border-radius:99px;overflow:hidden}
+.rb .fill{height:100%;background:var(--fire);border-radius:99px;width:0;transition:width 1.4s var(--ease)}
+.risk-note{margin-top:30px;font-size:13px;color:var(--gray-2);font-style:italic}
+@media(max-width:900px){.risk-wrap{grid-template-columns:1fr;gap:50px}}
+
+/* RESPONSE: one incident, three views */
+.response-stage{border:1px solid var(--line);border-radius:20px;background:var(--bg-2);overflow:hidden}
+.rs-tabs{display:flex;border-bottom:1px solid var(--line)}
+.rs-tab{flex:1;padding:22px;font-family:var(--mono);font-size:11.5px;letter-spacing:.2em;color:var(--gray-2);text-align:center;cursor:pointer;transition:all .3s;border-bottom:2px solid transparent}
+.rs-tab:hover{color:var(--gray)}
+.rs-tab.active{color:var(--white);border-bottom-color:var(--fire);background:rgba(255,255,255,.02)}
+.rs-body{padding:60px 40px;min-height:230px;display:flex;align-items:center;justify-content:space-between;gap:40px}
+.rs-id{font-family:var(--mono);font-size:13px;color:var(--gray-2)}
+.rs-main .t{font-size:clamp(26px,3.5vw,40px);font-weight:650;letter-spacing:-.02em}
+.rs-main .d{margin-top:12px;color:var(--gray);font-size:15px;max-width:420px;line-height:1.6}
+.rs-side{text-align:right}
+.rs-side .big{font-size:56px;font-weight:650;color:var(--fire);font-variant-numeric:tabular-nums}
+.rs-side .k{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--gray-2);margin-top:6px}
+@media(max-width:820px){.rs-body{flex-direction:column;align-items:flex-start}.rs-side{text-align:left}}
+
+/* PORTALS */
+.portal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.portal{border:1px solid var(--line);border-radius:20px;padding:46px 38px;background:var(--bg-2);transition:all .45s var(--ease);display:flex;flex-direction:column;min-height:340px}
+.portal:hover{border-color:rgba(255,255,255,.22);transform:translateY(-4px);background:var(--panel)}
+.portal .pk{font-family:var(--mono);font-size:10.5px;letter-spacing:.22em;color:var(--gray-2)}
+.portal h3{font-size:30px;font-weight:650;letter-spacing:-.02em;margin-top:60px}
+.portal .pv{color:var(--fire);font-size:19px;font-weight:600;margin-top:6px}
+.portal p{color:var(--gray);font-size:14.5px;line-height:1.65;margin-top:16px;flex:1}
+.portal .link-arrow{margin-top:30px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px}
+.portal.intel:hover{border-color:rgba(126,200,242,.4)}
+.portal.intel .pv{color:var(--ice)}
+@media(max-width:900px){.portal-grid{grid-template-columns:1fr}.portal{min-height:0}.portal h3{margin-top:28px}}
+
+/* TECH pipeline */
+.tech-flow{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;border:1px solid var(--line);border-radius:20px;padding:50px 40px;background:var(--bg-2)}
+.tf-node{font-family:var(--mono);font-size:clamp(10px,1.3vw,13px);letter-spacing:.14em;color:var(--gray);text-align:center;flex:1;min-width:90px}
+.tf-node.hot{color:var(--fire)}
+.tf-arrow{color:var(--gray-2);flex:none}
+.tech-drawer{margin-top:26px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--gray-2);letter-spacing:.06em}
+.tech-drawer span{color:var(--gray)}
+
+/* CTA band */
+.cta-band{text-align:center;padding:170px 0}
+.cta-band h2{font-size:clamp(40px,6.5vw,84px)}
+.cta-band p{margin-top:24px}
+.cta-band .hero-actions{justify-content:center}
+
+/* ============ FOOTER ============ */
+footer{border-top:1px solid var(--line);background:var(--bg-2)}
+.f-main{max-width:1200px;margin:0 auto;padding:90px 32px 70px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:48px}
+.f-brand .brand{font-size:19px}
+.f-brand .tag{margin-top:18px;color:var(--gray);font-size:14.5px;max-width:260px;line-height:1.6}
+.f-brand .live{margin-top:28px;display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--gray)}
+.f-col .h{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;color:var(--gray-2);margin-bottom:22px}
+.f-col a{display:block;color:var(--gray);font-size:14px;padding:6px 0;transition:color .25s,transform .25s var(--ease)}
+.f-col a:hover{color:var(--white);transform:translateX(3px)}
+.f-bottom{max-width:1200px;margin:0 auto;padding:30px 32px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+.f-bottom .meta a{color:var(--gray)}
+.f-bottom .meta a:hover{color:var(--white)}
+@media(max-width:900px){.f-main{grid-template-columns:1fr 1fr}.f-brand{grid-column:1/-1}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="inner">
+    <a class="brand" href="#"><span class="dot"></span>FireSense</a>
+    <div class="nav-links">
+      <a href="#detect">Intelligence</a>
+      <a href="#respond">Response</a>
+      <a href="#platform">Platform</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:22px">
+      <span class="status-chip"><span class="pulse" style="width:7px;height:7px"></span>OPERATIONS LIVE</span>
+      <a class="nav-cta" href="/app">Open Platform <span class="arrow">→</span></a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="container">
+    <div class="hero-eyebrow kicker"><span class="idx">FIRESENSE</span><span style="width:36px;height:1px;background:var(--line)"></span><span>SATELLITE DISASTER INTELLIGENCE</span></div>
+    <h1>From signal<br><span class="dim">to action.</span></h1>
+    <p class="body-lg hero-sub">FireSense turns raw satellite heat detections into classified, prioritized incidents — so responders act on what matters, minutes faster.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="/app">Explore FireSense <span class="arrow">→</span></a>
+      <a class="btn btn-ghost" href="#detect">How it works</a>
+    </div>
+
+    <div class="hero-visual" aria-hidden="true">
+      <div class="hv-scan"></div>
+      <div class="hv-crosshair">
+        <div class="hv-ring"></div>
+        <div class="hv-ring"></div>
+        <div class="hv-dot"></div>
+      </div>
+      <div class="hv-tag">
+        <div class="t1">VIIRS · THERMAL ANOMALY</div>
+        <div class="t2">Industrial Fire — 91%</div>
+        <div class="t3">FRP 42.8 MW · 30.70°N 76.71°E</div>
+      </div>
+      <div class="hv-meta">
+        <div><div class="k">LOCATION</div><div class="v">30.7046° N · 76.7104° E</div></div>
+        <div><div class="k">SENSOR</div><div class="v">VIIRS · 375 m</div></div>
+        <div><div class="k">OBSERVED</div><div class="v">14:32 UTC</div></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- 01 DETECT -->
+<section id="detect">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="kicker"><span class="idx">01 /</span> DETECT</div>
+      <h2>Every incident begins<br>as a signal.</h2>
+      <p class="body-lg">NASA satellites scan India every passing orbit. FireSense ingests each thermal detection the moment it hits the feed — raw heat becomes a tracked event.</p>
+    </div>
+    <div class="stat-row reveal">
+      <div class="stat fire"><div class="n" data-count="375">0</div><div class="l">Metre VIIRS resolution — every hotspot located to a city block.</div></div>
+      <div class="stat ice"><div class="n" data-count="24">0</div><div class="l">Hours of continuous satellite coverage, refreshed every pass.</div></div>
+      <div class="stat"><div class="n" data-count="60">0</div><div class="l">Day persistence baseline per location, before we call anything unusual.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 CLASSIFY -->
+<section id="classify" style="background:var(--bg-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="kicker"><span class="idx">02 /</span> CLASSIFY</div>
+      <h2>A signal isn't an answer.</h2>
+      <p class="body-lg">A thermal pixel could be a refinery flare, a stubble fire, or a spreading wildfire. FireSense fuses facility data, land-cover and 60-day temporal behaviour to say which — with evidence.</p>
+    </div>
+    <div class="classify-board reveal">
+      <div class="cb-stage anomaly">THERMAL ANOMALY</div>
+      <div class="cb-arrow">↓</div>
+      <div class="cb-stage classifying">CLASSIFYING · CONTEXT · PERSISTENCE</div>
+      <div class="cb-arrow">↓</div>
+      <div class="cb-stage result">INDUSTRIAL FIRE · 91% CONFIDENCE</div>
+      <div class="cb-classes">
+        <span class="cb-chip">WILDFIRE</span>
+        <span class="cb-chip active">INDUSTRIAL FIRE</span>
+        <span class="cb-chip">GAS FLARE</span>
+        <span class="cb-chip">POWER PLANT</span>
+        <span class="cb-chip">CROP BURNING</span>
+        <span class="cb-chip">MINING</span>
+        <span class="cb-chip">CLANDESTINE</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 CONTEXT -->
+<section id="context">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="kicker"><span class="idx">03 /</span> CONTEXT</div>
+      <h2>Know what surrounds<br>the fire.</h2>
+      <p class="body-lg">NASA gives you the signal. FireSense gives you the surroundings — population, infrastructure, access routes and land-cover, computed for every incident.</p>
+    </div>
+    <div class="context-panel reveal">
+      <div class="context-map">
+        <div class="hv-scan"></div>
+        <div class="cm-node incident" style="left:50%;top:52%"><div class="pin"></div><div class="lbl">INCIDENT</div></div>
+        <div class="cm-node facility" style="left:22%;top:30%"><div class="pin"></div><div class="lbl">INDUSTRIAL FACILITY · 0.9 KM</div></div>
+        <div class="cm-node settlement" style="left:76%;top:28%"><div class="pin"></div><div class="lbl">SETTLEMENT · 2.4 KM</div></div>
+        <div class="cm-node settlement" style="left:72%;top:78%"><div class="pin"></div><div class="lbl">ACCESS ROAD · NH-55</div></div>
+      </div>
+      <div class="context-legend">
+        <div class="cl-item"><div class="k">POPULATION EXPOSURE</div><div class="v">82,000 <span class="lv lv-high">HIGH</span></div></div>
+        <div class="cl-item"><div class="k">INFRASTRUCTURE</div><div class="v">Power corridor <span class="lv lv-high">AT RISK</span></div></div>
+        <div class="cl-item"><div class="k">ACCESS ROUTES</div><div class="v">NH-55 open <span class="lv lv-med">CLEAR</span></div></div>
+        <div class="cl-item"><div class="k">LAND COVER</div><div class="v">Built-up / industrial</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 RISK -->
+<section id="risk" style="background:var(--bg-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="container">
+    <div class="risk-wrap">
+      <div class="reveal">
+        <div class="risk-number" data-count="87">0</div>
+        <div class="risk-label">RISK SCORE · CRITICAL</div>
+      </div>
+      <div class="reveal">
+        <div class="risk-bars">
+          <div class="rb" data-w="30"><div class="row"><span>Severity</span><span class="pc">30%</span></div><div class="track"><div class="fill"></div></div></div>
+          <div class="rb" data-w="25"><div class="row"><span>Persistence</span><span class="pc">25%</span></div><div class="track"><div class="fill"></div></div></div>
+          <div class="rb" data-w="20"><div class="row"><span>Exposure</span><span class="pc">20%</span></div><div class="track"><div class="fill"></div></div></div>
+          <div class="rb" data-w="15"><div class="row"><span>Infrastructure</span><span class="pc">15%</span></div><div class="track"><div class="fill"></div></div></div>
+          <div class="rb" data-w="10"><div class="row"><span>Growth</span><span class="pc">10%</span></div><div class="track"><div class="fill"></div></div></div>
+        </div>
+        <p class="risk-note">Decision-support priority — so the most dangerous fire is never buried in a list.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 RESPOND -->
+<section id="respond">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="kicker"><span class="idx">05 /</span> RESPOND</div>
+      <h2>One incident.<br>One source of truth.</h2>
+      <p class="body-lg">The same event moves through every pair of hands — analyst, commander, responder — without a single detail lost in translation.</p>
+    </div>
+    <div class="response-stage reveal">
+      <div class="rs-tabs">
+        <div class="rs-tab active" data-v="0">ANALYST VIEW</div>
+        <div class="rs-tab" data-v="1">COMMAND VIEW</div>
+        <div class="rs-tab" data-v="2">FIELD RESPONSE</div>
+      </div>
+      <div class="rs-body">
+        <div class="rs-main">
+          <div class="rs-id">INC-2847 · ANGUL, ODISHA</div>
+          <div class="t" id="rs-title">Industrial Fire — Classified</div>
+          <div class="d" id="rs-desc">Evidence panel: facility proximity HIGH, persistence HIGH, FRP 42.8 MW. Counter-evidence disclosed for analyst review.</div>
+        </div>
+        <div class="rs-side">
+          <div class="big" id="rs-stat">91%</div>
+          <div class="k" id="rs-stat-k">CLASSIFICATION CONFIDENCE</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PLATFORM: three portals -->
+<section id="platform" style="background:var(--bg-2);border-top:1px solid var(--line)">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="kicker"><span class="idx">PLATFORM</span></div>
+      <h2>Three experiences.<br>One mission.</h2>
+    </div>
+    <div class="portal-grid">
+      <a class="portal intel reveal" href="/app">
+        <div class="pk">01</div>
+        <h3>Intelligence</h3>
+        <div class="pv">Understand.</div>
+        <p>Investigate thermal detections with full evidence dossiers — facility context, persistence history and land-cover, on a live map.</p>
+        <span class="link-arrow">EXPLORE <span class="arrow">→</span></span>
+      </a>
+      <a class="portal reveal" href="/app">
+        <div class="pk">02</div>
+        <h3>Command</h3>
+        <div class="pv">Coordinate.</div>
+        <p>Prioritize incidents by risk score, dispatch the right agency, and track every case from alert to resolution.</p>
+        <span class="link-arrow">EXPLORE <span class="arrow">→</span></span>
+      </a>
+      <a class="portal reveal" href="/app">
+        <div class="pk">03</div>
+        <h3>Response</h3>
+        <div class="pv">Act.</div>
+        <p>Citizens report smoke with GPS, see evacuation routes, and reach shelter — even on zero data, via SMS fallback.</p>
+        <span class="link-arrow">EXPLORE <span class="arrow">→</span></span>
+      </a>
+    </div>
+
+    <div style="margin-top:110px" class="reveal">
+      <div class="kicker" style="justify-content:center;margin-bottom:40px"><span class="idx">BUILT ON</span>&nbsp;REAL SIGNALS</div>
+      <div class="tech-flow">
+        <div class="tf-node hot">NASA FIRMS</div><div class="tf-arrow">→</div>
+        <div class="tf-node">THERMAL DETECTION</div><div class="tf-arrow">→</div>
+        <div class="tf-node hot">CLASSIFICATION</div><div class="tf-arrow">→</div>
+        <div class="tf-node">GEOSPATIAL CONTEXT</div><div class="tf-arrow">→</div>
+        <div class="tf-node hot">RISK</div><div class="tf-arrow">→</div>
+        <div class="tf-node">RESPONSE</div>
+      </div>
+      <div class="tech-drawer"><span>VIIRS 375m</span> · OSM Overpass · ESA WorldCover · Leaflet GIS · REST API · GeoJSON</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-band">
+  <div class="container reveal">
+    <h2>See what matters.<br><span style="color:var(--gray-2)">Before it becomes an emergency.</span></h2>
+    <p class="body-lg">The live platform is running right now.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="/app">Open FireSense <span class="arrow">→</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="f-main">
+    <div class="f-brand">
+      <div class="brand"><span class="dot"></span>FireSense</div>
+      <div class="tag">Satellite intelligence for faster disaster response. From signal to action.</div>
+      <div class="live"><span class="pulse" style="width:7px;height:7px"></span> OPERATIONS PLATFORM · SIH26162 · NTRO</div>
+    </div>
+    <div class="f-col">
+      <div class="h">INTELLIGENCE</div>
+      <a href="/app">NTRO Intelligence</a>
+      <a href="/app">Incident Analysis</a>
+      <a href="/app">Detection Feed</a>
+    </div>
+    <div class="f-col">
+      <div class="h">RESPONSE</div>
+      <a href="/app">Government Command</a>
+      <a href="/app">Responder Operations</a>
+      <a href="/app">Citizen Services</a>
+    </div>
+    <div class="f-col">
+      <div class="h">PLATFORM</div>
+      <a href="#detect">How FireSense Works</a>
+      <a href="#classify">Data &amp; Intelligence</a>
+      <a href="#risk">Risk Engine</a>
+    </div>
+    <div class="f-col">
+      <div class="h">RESOURCES</div>
+      <a href="/api/stats">Live Statistics API</a>
+      <a href="/api/incidents">Incidents API</a>
+      <a href="https://firms.modaps.eosdis.nasa.gov/" target="_blank" rel="noopener">NASA FIRMS</a>
+    </div>
+  </div>
+  <div class="f-bottom">
+    <span class="meta">© 2026 FireSense — From space to action.</span>
+    <span class="meta"><a href="/app">Open Platform →</a></span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // nav scroll state
+  var nav = document.getElementById('nav');
+  var onScroll = function(){ nav.classList.toggle('scrolled', scrollY > 40); };
+  addEventListener('scroll', onScroll, {passive:true}); onScroll();
+
+  // scroll reveal (single observer, GPU-friendly)
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:.18, rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+
+  // count-up numbers (once, on view)
+  var cio = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(!e.isIntersecting) return;
+      var el = e.target, target = +el.dataset.count, t0 = null, dur = 1400;
+      if (reduced) { el.textContent = target; cio.unobserve(el); return; }
+      var step = function(ts){
+        if(!t0) t0 = ts;
+        var p = Math.min((ts - t0)/dur, 1);
+        el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+        if(p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+      cio.unobserve(el);
+    });
+  }, {threshold:.6});
+  document.querySelectorAll('[data-count]').forEach(function(el){ cio.observe(el); });
+
+  // risk bars fill on view
+  var bio = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(!e.isIntersecting) return;
+      e.target.querySelectorAll('.fill').forEach(function(f, i){
+        var w = f.closest('.rb').dataset.w;
+        if (reduced) { f.style.transition='none'; f.style.width = w + '%'; return; }
+        setTimeout(function(){ f.style.width = w + '%'; }, 120 * i);
+      });
+      bio.unobserve(e.target);
+    });
+  }, {threshold:.5});
+  var rw = document.querySelector('.risk-bars'); if(rw) bio.observe(rw);
+
+  // response view switcher
+  var VIEWS = [
+    {t:'Industrial Fire — Classified', d:'Evidence panel: facility proximity HIGH, persistence HIGH, FRP 42.8 MW. Counter-evidence disclosed for analyst review.', s:'91%', k:'CLASSIFICATION CONFIDENCE'},
+    {t:'Dispatch NDRF Team 3/4', d:'Assets at risk: 82K population, power corridor, NH-55. Downwind corridor 2.1 km. Authority: Odisha Disaster Management.', s:'87', k:'RISK SCORE · CRITICAL'},
+    {t:'En Route — ETA 14 min', d:'Field terminal: safest approach via NH-55, water point at plant gate, wind NE 16 km/h. Acknowledge → Arrived → Contained.', s:'14', k:'MINUTES TO SCENE'}
+  ];
+  var tabs = document.querySelectorAll('.rs-tab');
+  tabs.forEach(function(tab){
+    tab.addEventListener('click', function(){
+      tabs.forEach(function(x){ x.classList.remove('active'); });
+      tab.classList.add('active');
+      var v = VIEWS[+tab.dataset.v];
+      var body = document.querySelector('.rs-body');
+      document.getElementById('rs-title').textContent = v.t;
+      document.getElementById('rs-desc').textContent = v.d;
+      document.getElementById('rs-stat').textContent = v.s;
+      document.getElementById('rs-stat-k').textContent = v.k;
+      if (!reduced){
+        body.style.opacity = 0; body.style.transform = 'translateY(8px)';
+        requestAnimationFrame(function(){
+          body.style.transition = 'opacity .4s var(--ease), transform .4s var(--ease)';
+          body.style.opacity = 1; body.style.transform = 'none';
+        });
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

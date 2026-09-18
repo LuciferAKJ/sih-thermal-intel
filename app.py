@@ -29,7 +29,11 @@ class AeroThermalHandler(SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
 
-        if path == "/" or path == "/index.html":
+        if path == "/" or path == "/landing" or path == "/index.html":
+            self.serve_file(os.path.join(STATIC_DIR, "landing.html"), "text/html")
+            return
+
+        if path == "/app" or path == "/dashboard":
             self.serve_file(os.path.join(STATIC_DIR, "index.html"), "text/html")
             return
 
