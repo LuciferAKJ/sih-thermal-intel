@@ -24,6 +24,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from backend.incident_engine import INCIDENTS
 from backend import store
 from backend.pipeline import HotspotPipeline
+from backend.alerts import dispatch_alert, get_approved_alerts
+from backend.state_machine import can_transition, validate_and_transition, VALID_TRANSITIONS
+from backend.incident_logger import log_transition, get_logs, get_all_logs
+from backend.demo_loader import load_all_scenarios, load_facilities, get_responders_nearby
+from urllib.parse import parse_qs
 
 PORT = 5002
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -234,6 +239,39 @@ class AeroThermalHandler(SimpleHTTPRequestHandler):
                 self.send_json({"error": "Incident not found"}, 404)
             return
 
+        # --- New operational routes ---
+        if path == "/public/alerts":
+            self.send_json({"alerts": get_approved_alerts()})
+            return
+
+        if path.startswith("/api/responders/nearby"):
+            qs = parse_qs(parsed.query)
+            try:
+                lat = float(qs.get("lat", [0])[0])
+                lon = float(qs.get("lon", [0])[0])
+                limit = int(qs.get("limit", [5])[0])
+                self.send_json({"responders": get_responders_nearby(lat, lon, limit)})
+            except Exception as e:
+                self.send_json({"error": str(e)}, 400)
+            return
+
+        if path.startswith("/api/incident/") and "/logs" in path:
+            inc_id = path.replace("/api/incident/", "").replace("/logs", "").strip()
+            self.send_json({"logs": get_logs(inc_id)})
+            return
+
+        if path.startswith("/api/export/") and path.endswith("/pdf"):
+            inc_id = path.replace("/api/export/", "").replace("/pdf", "").strip()
+            if inc_id in INCIDENTS:
+                item = dict(INCIDENTS[inc_id])
+                overrides = store.load_incident_overrides()
+                if inc_id in overrides:
+                    item["status"] = overrides[inc_id]["status"]
+                self.send_json({"export": item, "format": "json_stub", "note": "PDF export stub -- full PDF generation deferred"})
+            else:
+                self.send_json({"error": "Incident not found"}, 404)
+            return
+
         self.send_error(404, "Not Found")
 
     def do_POST(self):
@@ -343,6 +381,45 @@ class AeroThermalHandler(SimpleHTTPRequestHandler):
                     })
                 else:
                     self.send_json({"error": "Incident not found"}, 404)
+        # --- New operational routes ---
+        if path.startswith("/api/incident/") and path.endswith("/alert"):
+            parts = path.split("/")
+            inc_id = parts[3]
+            try:
+                alert = dispatch_alert(inc_id)
+                self.send_json({"success": True, "alert": alert})
+            except ValueError as e:
+                self.send_json({"error": str(e)}, 404)
+            except Exception as e:
+                self.send_json({"error": str(e)}, 500)
+            return
+
+        if path.startswith("/api/incident/") and "/status" in path:
+            parts = path.split("/")
+            inc_id = parts[3]
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                body = json.loads(self.rfile.read(length).decode("utf-8"))
+                new_status = body.get("status", "").upper()
+                note = body.get("note", "")
+                current = INCIDENTS[inc_id]["status"]
+
+                rec = validate_and_transition(inc_id, current, new_status, "api", note)
+                log_transition(rec)
+                INCIDENTS[inc_id]["status"] = new_status
+                store.save_incident_status(inc_id, new_status)
+
+                self.send_json({
+                    "success": True,
+                    "incident_id": inc_id,
+                    "old_status": rec["old_status"],
+                    "new_status": rec["new_status"],
+                    "changed_by": rec["changed_by"],
+                })
+            except ValueError as e:
+                self.send_json({"error": str(e)}, 400)
+            except KeyError:
+                self.send_json({"error": "Incident not found"}, 404)
             except Exception as e:
                 self.send_json({"error": str(e)}, 500)
             return
@@ -448,6 +525,8 @@ class AeroThermalHandler(SimpleHTTPRequestHandler):
 
 
 def run():
+    load_all_scenarios()
+    load_facilities()
     httpd = HTTPServer(("", PORT), AeroThermalHandler)
     print(f"\n=======================================================")
     print(f" [*] AeroThermal Incident & Responder Platform Online!")
