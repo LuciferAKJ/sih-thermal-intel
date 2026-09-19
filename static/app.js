@@ -165,9 +165,9 @@ const translations = {
 
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
-    // deep link: /app?portal=citizen|command|ntro (from landing page CTAs)
+    // deep link: /app?portal=citizen|command|ntro|responder (from landing page CTAs)
     const qp = new URLSearchParams(location.search).get('portal');
-    if (['ntro', 'command', 'citizen'].includes(qp)) switchPortal(qp);
+    if (['ntro', 'command', 'responder', 'citizen'].includes(qp)) switchPortal(qp);
     renderNtroIncidents();
     renderCmdZones();
     selectZone('angul');
@@ -206,10 +206,11 @@ function downloadGeoJSON() {
 // Portal Switching
 function switchPortal(portalName) {
     currentPortal = portalName;
-    const portals = ['ntro', 'command', 'citizen'];
+    const portals = ['ntro', 'command', 'responder', 'citizen'];
     portals.forEach(p => {
         const el = document.getElementById(`portal-${p}`);
         const tab = document.getElementById(`tab-${p}`);
+        if (!el || !tab) return;
         if (p === portalName) {
             el.classList.remove('hidden');
             tab.className = "flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200/80 dark:border-slate-700 transition-all font-bold";
@@ -219,12 +220,21 @@ function switchPortal(portalName) {
         }
     });
 
-    const footerLabel = document.getElementById('txt-footer-portal-label');
-    if (portalName === 'ntro') footerLabel.textContent = "NTRO Intelligence Portal";
-    else if (portalName === 'command') footerLabel.textContent = "Government Command Dashboard";
-    else footerLabel.textContent = "Citizen Services Portal";
+    try {
+        const url = new URL(window.location);
+        url.searchParams.set('portal', portalName);
+        window.history.replaceState({}, '', url);
+    } catch { /* ignore on non-browser environments */ }
 
-    lucide.createIcons();
+    const footerLabel = document.getElementById('txt-footer-portal-label');
+    if (footerLabel) {
+        if (portalName === 'ntro') footerLabel.textContent = "NTRO Intelligence Portal";
+        else if (portalName === 'command') footerLabel.textContent = "Government Command Dashboard";
+        else if (portalName === 'responder') footerLabel.textContent = "Responder Operations Field Terminal";
+        else footerLabel.textContent = "Citizen Services Portal";
+    }
+
+    if (window.lucide) lucide.createIcons();
 }
 
 // Theme Switching

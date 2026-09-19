@@ -1,4 +1,83 @@
 /* FireSense Clean Government & Enterprise Styling */
+:root {
+  --bg: #F7F7F5;
+  --surface: #FFFFFF;
+  --surface-muted: #F0F1EF;
+  --text-primary: #111111;
+  --text-secondary: #34383D;
+  --text-muted: #555B61;
+  --border: #D5D7DA;
+  --border-strong: #B9BDC2;
+  --accent: #F4511E;
+  --accent-hover: #D84315;
+}
+
+.dark {
+  --bg: #090d16;
+  --surface: #0f172a;
+  --surface-muted: #1e293b;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --border: #334155;
+  --border-strong: #475569;
+  --accent: #ff5a1f;
+  --accent-hover: #f97316;
+}
+
+/* Light Mode Global Semantic Overrides (Removes Washed-out Fog) */
+html:not(.dark) body {
+  background-color: var(--bg) !important;
+  color: var(--text-primary) !important;
+}
+
+html:not(.dark) header {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  border-color: var(--border) !important;
+}
+
+html:not(.dark) .bg-white {
+  background-color: var(--surface) !important;
+}
+
+html:not(.dark) .bg-slate-50 {
+  background-color: var(--surface-muted) !important;
+}
+
+html:not(.dark) .border-slate-100,
+html:not(.dark) .border-slate-200,
+html:not(.dark) .border-slate-300 {
+  border-color: var(--border) !important;
+}
+
+/* High Contrast Typography in Light Mode */
+html:not(.dark) .text-slate-900,
+html:not(.dark) .text-slate-800,
+html:not(.dark) .text-slate-700 {
+  color: var(--text-primary) !important;
+}
+
+html:not(.dark) .text-slate-600,
+html:not(.dark) .text-slate-500 {
+  color: var(--text-secondary) !important;
+}
+
+/* Never allow essential labels or metadata to wash out into illegible pale gray */
+html:not(.dark) .text-slate-400 {
+  color: var(--text-muted) !important;
+}
+
+/* Table headers & metadata crispness */
+html:not(.dark) th {
+  color: var(--text-secondary) !important;
+  font-weight: 700 !important;
+}
+
+html:not(.dark) tr:hover {
+  background-color: #ECEEEB !important;
+}
+
+/* Scrollbars */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }

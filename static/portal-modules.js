@@ -210,12 +210,14 @@ switchPortal = function (portalName) {
     if (portalName === 'command') { loadIncidentTracker(); renderCitizenReportsFeed(); }
     if (portalName === 'citizen') { setTimeout(initCitizenMap, 80); renderCitizenReportsFeed(); }
     if (portalName === 'ntro') { loadIncidentTable(); wireIncidentTable(); loadDetectionFeed(); }
+    if (portalName === 'responder') { loadResponderPortal(); }
 };
 
 // load on first paint if command (default portal) is shown
 document.addEventListener('DOMContentLoaded', () => {
     if (currentPortal === 'command') { loadIncidentTracker(); renderCitizenReportsFeed(); }
     if (currentPortal === 'ntro') { loadIncidentTable(); wireIncidentTable(); loadDetectionFeed(); }
+    if (currentPortal === 'responder') { loadResponderPortal(); }
 });
 
 // ===================== Mission-Control Incident Table + Drawer + Feed =====================
@@ -385,5 +387,229 @@ async function loadDetectionFeed() {
   } catch (err) {
     el.dataset.loaded = '';
     el.innerHTML = '<div class="text-red-500">FEED UNAVAILABLE — ' + err.message + '</div>';
+  }
+}
+
+// ===================== Responder Operations Field Terminal =====================
+const RESPONDER_FLOW = [
+  { key: 'DISPATCHED', label: 'Dispatched', icon: 'send', next: 'ACKNOWLEDGED', actionLabel: '🫡 ACKNOWLEDGE DISPATCH', actionClass: 'bg-amber-500 hover:bg-amber-600' },
+  { key: 'ACKNOWLEDGED', label: 'Acknowledged', icon: 'check-circle-2', next: 'EN ROUTE', actionLabel: '🚒 MARK EN ROUTE', actionClass: 'bg-blue-600 hover:bg-blue-700' },
+  { key: 'EN ROUTE', label: 'En Route', icon: 'truck', next: 'ARRIVED', actionLabel: '📍 CONFIRM ARRIVED ON SCENE', actionClass: 'bg-orange-600 hover:bg-orange-700' },
+  { key: 'ARRIVED', label: 'Arrived', icon: 'map-pin', next: 'CONTAINED', actionLabel: '🧯 REPORT CONTAINED / CONTROLLED', actionClass: 'bg-red-600 hover:bg-red-700' },
+  { key: 'CONTAINED', label: 'Contained', icon: 'shield-check', next: 'RESOLVED', actionLabel: '✅ MARK INCIDENT RESOLVED', actionClass: 'bg-emerald-600 hover:bg-emerald-700' },
+  { key: 'RESOLVED', label: 'Resolved', icon: 'check-check', next: null, actionLabel: 'MISSION ACCOMPLISHED', actionClass: 'bg-emerald-700' }
+];
+
+let _activeResponderIncId = 'INC-2026-0044';
+let _responderIncCache = {};
+
+async function loadResponderPortal() {
+  const select = document.getElementById('resp-incident-select');
+  try {
+    const resp = await fetch('/api/incidents');
+    const data = await resp.json();
+    const incidents = Array.isArray(data.incidents) ? data.incidents : Object.values(data.incidents || {});
+    _responderIncCache = {};
+    incidents.forEach(i => { _responderIncCache[i.id] = i; });
+
+    if (select && incidents.length > 0) {
+      if (!_responderIncCache[_activeResponderIncId]) {
+        _activeResponderIncId = incidents[0].id;
+      }
+      select.innerHTML = incidents.map(i => 
+        `<option value="${i.id}" ${i.id === _activeResponderIncId ? 'selected' : ''}>${i.id} • ${i.location_name} (${i.status || 'NEW'})</option>`
+      ).join('');
+    }
+    renderResponderIncident(_activeResponderIncId);
+  } catch (err) {
+    console.error('Failed to load responder incidents:', err);
+    renderResponderIncident(_activeResponderIncId);
+  }
+}
+
+function onResponderIncidentChange(incId) {
+  _activeResponderIncId = incId;
+  renderResponderIncident(incId);
+}
+
+function renderResponderIncident(incId) {
+  const inc = _responderIncCache[incId] || {
+    id: incId,
+    title: 'Angul Thermal Power & Coal Storage Yard',
+    location_name: 'Angul Industrial Belt, Odisha',
+    classification: 'INDUSTRIAL FIRE',
+    risk_score: 96,
+    status: 'DISPATCHED',
+    frp_mw: 710.0,
+    confidence: 96,
+    coordinates: { lat: 20.8420, lon: 85.1020 },
+    wind_corridor: { direction: 'NE', speed_kmh: 20, potential_corridor_km: 3.4 }
+  };
+
+  const el = (id) => document.getElementById(id);
+  if (el('resp-title')) el('resp-title').textContent = inc.title || inc.id;
+  if (el('resp-location')) el('resp-location').textContent = `${inc.location_name || ''} • Target Sector Assessment`;
+  if (el('resp-badge-type')) el('resp-badge-type').textContent = inc.classification || 'HAZARD';
+  
+  const sevEl = el('resp-badge-severity');
+  if (sevEl) {
+    const risk = inc.risk_score || 50;
+    sevEl.textContent = risk >= 70 ? 'CRITICAL' : (risk >= 40 ? 'HIGH' : 'MODERATE');
+    sevEl.className = `px-2.5 py-1 rounded-md text-white text-xs font-black font-mono ${risk >= 70 ? 'bg-red-600' : (risk >= 40 ? 'bg-amber-600' : 'bg-emerald-600')}`;
+  }
+
+  const lat = (inc.coordinates && inc.coordinates.lat) || 20.8420;
+  const lon = (inc.coordinates && inc.coordinates.lon) || 85.1020;
+  if (el('resp-coords')) el('resp-coords').textContent = `${lat}°N • ${lon}°E`;
+  if (el('resp-frp')) el('resp-frp').textContent = `${inc.frp_mw || '0.0'} MW`;
+  if (el('resp-hazard')) el('resp-hazard').textContent = `${inc.risk_score >= 70 ? 'HIGH' : 'MODERATE'} (Risk ${inc.risk_score}/100)`;
+  
+  const wc = inc.wind_corridor || {};
+  if (el('resp-wind')) el('resp-wind').textContent = `${wc.direction || 'NE'} at ${wc.speed_kmh || 20} km/h`;
+
+  renderResponderStateMachine(inc);
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderResponderStateMachine(inc) {
+  let curStatus = (inc.status || 'DISPATCHED').toUpperCase();
+  // Normalize if NEW/INVESTIGATING/VERIFIED for tactical field view
+  if (['NEW', 'INVESTIGATING', 'VERIFIED'].includes(curStatus)) {
+    curStatus = 'DISPATCHED';
+  }
+
+  const statePill = document.getElementById('resp-current-state-pill');
+  if (statePill) {
+    statePill.textContent = curStatus;
+    statePill.className = `px-2.5 py-0.5 rounded text-xs font-mono font-bold text-white ${INC_STATUS_COLORS[curStatus] || 'bg-slate-500'}`;
+  }
+
+  const stepsContainer = document.getElementById('resp-steps-container');
+  const actionContainer = document.getElementById('resp-action-container');
+  if (!stepsContainer || !actionContainer) return;
+
+  const curIdx = RESPONDER_FLOW.findIndex(s => s.key === curStatus);
+  const safeIdx = curIdx >= 0 ? curIdx : 0;
+
+  // Visual Pipeline Steps
+  stepsContainer.innerHTML = RESPONDER_FLOW.map((s, idx) => {
+    const isPast = idx < safeIdx;
+    const isCurrent = idx === safeIdx;
+    let bg = 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700';
+    if (isPast) bg = 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-bold';
+    if (isCurrent) bg = 'bg-orange-500 text-white font-black shadow-sm ring-2 ring-orange-500/30';
+
+    return `
+      <div class="p-2 rounded-lg text-center ${bg} transition-all">
+        <div class="text-[10px] uppercase font-bold tracking-wider">${isPast ? '✓ ' : ''}${s.label}</div>
+        <div class="text-[9px] mt-0.5 opacity-80">${isCurrent ? 'ACTIVE NOW' : (isPast ? 'COMPLETED' : 'PENDING')}</div>
+      </div>
+    `;
+  }).join('');
+
+  // Next Valid Action Button
+  const stepObj = RESPONDER_FLOW[safeIdx];
+  if (stepObj && stepObj.next) {
+    actionContainer.innerHTML = `
+      <div class="space-y-2">
+        <div class="text-[11px] font-mono text-slate-500 flex items-center justify-between">
+          <span>Action Required:</span>
+          <span>Next State &rarr; <strong>${stepObj.next}</strong></span>
+        </div>
+        <button onclick="advanceResponderState('${inc.id}', '${stepObj.next}')" 
+          class="w-full py-4 px-6 rounded-xl ${stepObj.actionClass} text-white font-black text-sm tracking-wider uppercase shadow-lg transition-transform active:scale-98 flex items-center justify-center gap-2">
+          <span>${stepObj.actionLabel}</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+    `;
+  } else {
+    actionContainer.innerHTML = `
+      <div class="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-center space-y-1">
+        <div class="font-black text-sm uppercase tracking-wider flex items-center justify-center gap-1.5">
+          <i data-lucide="check-circle" class="w-5 h-5 text-emerald-500"></i>
+          Incident Successfully Contained &amp; Resolved
+        </div>
+        <p class="text-xs text-slate-600 dark:text-slate-400">All fire perimeters sealed. Site handed over to state post-disaster authorities.</p>
+        <button onclick="advanceResponderState('${inc.id}', 'DISPATCHED')" class="mt-2 text-[11px] font-mono underline text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+          Reset test state to DISPATCHED
+        </button>
+      </div>
+    `;
+  }
+}
+
+async function advanceResponderState(incId, targetStatus) {
+  try {
+    const resp = await fetch(`/api/incident/${incId}/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: targetStatus })
+    });
+    const res = await resp.json();
+    if (res.success) {
+      if (_responderIncCache[incId]) {
+        _responderIncCache[incId].status = targetStatus;
+      }
+      renderResponderIncident(incId);
+      if (typeof loadIncidentTracker === 'function') loadIncidentTracker();
+      if (typeof loadIncidentTable === 'function') loadIncidentTable();
+    } else {
+      alert(res.error || 'Failed to update status');
+    }
+  } catch (err) {
+    alert('Network error updating status: ' + err.message);
+  }
+}
+
+function copyResponderCoords() {
+  const inc = _responderIncCache[_activeResponderIncId];
+  const lat = inc && inc.coordinates ? inc.coordinates.lat : 20.8420;
+  const lon = inc && inc.coordinates ? inc.coordinates.lon : 85.1020;
+  const text = `${lat}, ${lon}`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert(`GPS coordinates copied: ${text}`);
+    }).catch(() => {
+      alert(`Coordinates: ${text}`);
+    });
+  } else {
+    alert(`Coordinates: ${text}`);
+  }
+}
+
+function openNavigationRoute() {
+  const inc = _responderIncCache[_activeResponderIncId];
+  const lat = inc && inc.coordinates ? inc.coordinates.lat : 20.8420;
+  const lon = inc && inc.coordinates ? inc.coordinates.lon : 85.1020;
+  window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`, '_blank');
+}
+
+function submitResponderSitrep() {
+  const input = document.getElementById('resp-sitrep-input');
+  const statusEl = document.getElementById('resp-sitrep-status');
+  const logEl = document.getElementById('resp-sitrep-log');
+  if (!input || !input.value.trim()) return;
+
+  const note = input.value.trim();
+  const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+  if (logEl) {
+    const newEntry = document.createElement('div');
+    newEntry.className = 'p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 text-xs';
+    newEntry.innerHTML = `
+      <div class="flex justify-between font-mono text-[10px] text-slate-400">
+        <span>UNIT 3 &bull; OD-05-G-4421</span>
+        <span>Just now (${time})</span>
+      </div>
+      <div class="text-slate-800 dark:text-slate-200 mt-1 font-medium">${note}</div>
+    `;
+    logEl.insertBefore(newEntry, logEl.children[1] || null);
+  }
+
+  input.value = '';
+  if (statusEl) {
+    statusEl.textContent = '✅ SitRep transmitted to Command';
+    setTimeout(() => { statusEl.textContent = ''; }, 4000);
   }
 }
