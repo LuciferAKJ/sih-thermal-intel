@@ -213,6 +213,83 @@ switchPortal = function (portalName) {
     if (portalName === 'responder') { loadResponderPortal(); }
 };
 
+// ===================== Government Command Enhanced =====================
+const GOV_VALID_TRANSITIONS = {
+  NEW: ['INVESTIGATING'],
+  INVESTIGATING: ['VERIFIED'],
+  VERIFIED: ['DISPATCHED'],
+  DISPATCHED: ['ACKNOWLEDGED', 'INVESTIGATING'],
+  ACKNOWLEDGED: ['EN ROUTE'],
+  'EN ROUTE': ['ARRIVED'],
+  ARRIVED: ['CONTAINED'],
+  CONTAINED: ['RESOLVED'],
+  RESOLVED: []
+};
+
+async function govAcknowledge(incId) {
+  try {
+    const resp = await fetch(`/api/incidents/${incId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'INVESTIGATING' })
+    });
+    if (resp.status === 409) {
+      const data = await resp.json();
+      alert(`❌ Invalid Transition: ${data.error}`);
+      return;
+    }
+    if (resp.status === 403) {
+      alert('❌ Forbidden: You do not have permission to perform this action.');
+      return;
+    }
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const res = await resp.json();
+    if (res.success) {
+      loadIncidentTracker();
+      if (typeof loadIncidentTable === 'function') loadIncidentTable();
+    }
+  } catch (err) {
+    alert(`Network error: ${err.message}`);
+  }
+}
+
+async function govSendAlert(incId) {
+  try {
+    const resp = await fetch(`/api/incidents/${incId}/alert`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ incident_id: incId, alert_type: 'SIMULATED_DISPATCH' })
+    });
+    if (resp.status === 409) {
+      const data = await resp.json();
+      alert(`❌ Cannot send alert: ${data.error}`);
+      return;
+    }
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    alert(`✅ SIMULATED DISPATCH\n\nAlert ID: ${data.alert_id}\nDispatched to: ${data.dispatched_to}\nETA: ${data.eta}\n\n⚠️ This is a TRAINING SIMULATION — no real government system was contacted.`);
+    loadIncidentTracker();
+    if (typeof loadIncidentTable === 'function') loadIncidentTable();
+  } catch (err) {
+    alert(`Network error: ${err.message}`);
+  }
+}
+
+async function govExportPDF(incId) {
+  try {
+    const resp = await fetch(`/api/export/${incId}/pdf`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    if (data.pdf_url) {
+      window.open(data.pdf_url, '_blank');
+    } else {
+      alert(`📄 PDF Export: ${data.filename || 'Export generated'}`);
+    }
+  } catch (err) {
+    alert(`PDF export failed: ${err.message}`);
+  }
+}
+
 // load on first paint if command (default portal) is shown
 document.addEventListener('DOMContentLoaded', () => {
     if (currentPortal === 'command') { loadIncidentTracker(); renderCitizenReportsFeed(); }
@@ -539,13 +616,33 @@ function renderResponderStateMachine(inc) {
   }
 }
 
-async function advanceResponderState(incId, targetStatus) {
+async function advanceResponderState(incId, targetStatus, groundNote) {
   try {
-    const resp = await fetch(`/api/incident/${incId}/status`, {
-      method: 'POST',
+    const resp = await fetch(`/api/incidents/${incId}/status`, {
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: targetStatus })
+      body: JSON.stringify({
+        status: targetStatus,
+        ground_note: groundNote || undefined,
+        responder_id: 'UNIT-001'
+      })
     });
+
+    // Handle specific error codes
+    if (resp.status === 409) {
+      const data = await resp.json();
+      alert(`❌ Invalid Transition: ${data.error}\n\nAllowed: [${(data.allowed_transitions || []).join(', ')}]`);
+      return;
+    }
+    if (resp.status === 403) {
+      alert('❌ Forbidden: You are not assigned to this incident.');
+      return;
+    }
+    if (!resp.ok) {
+      const data = await resp.json().catch(() => ({}));
+      throw new Error(data.error || `HTTP ${resp.status}`);
+    }
+
     const res = await resp.json();
     if (res.success) {
       if (_responderIncCache[incId]) {
@@ -558,7 +655,7 @@ async function advanceResponderState(incId, targetStatus) {
       alert(res.error || 'Failed to update status');
     }
   } catch (err) {
-    alert('Network error updating status: ' + err.message);
+    alert(`Network error: ${err.message}`);
   }
 }
 
