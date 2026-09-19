@@ -49,6 +49,7 @@
                 </button>
                 <button onclick="switchPortal('responder')" id="tab-responder" class="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all">
                     <span>🚒</span> <span>First Responder</span>
+                    <span>🚒</span> <span>Responder Operations</span>
                 </button>
                 <button onclick="switchPortal('citizen')" id="tab-citizen" class="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all">
                     <span>👥</span> <span>Citizen Services</span>
@@ -284,6 +285,70 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Mission-Control Incident Table (NTRO Analyst Evidence Dossier) -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm space-y-3 p-4">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                    <div class="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
+                        <i data-lucide="table-2" class="w-4 h-4 text-blue-500"></i> Incident Intelligence Table
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <input id="inc-search" type="text" placeholder="Search ID, place, class&hellip;"
+                            class="px-3 py-1.5 rounded-md bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs w-56">
+                        <select id="inc-status-filter" class="px-2.5 py-1.5 rounded-md bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs">
+                            <option value="">ALL STATUSES</option>
+                            <option>NEW</option><option>INVESTIGATING</option><option>VERIFIED</option>
+                            <option>DISPATCHED</option><option>EN ROUTE</option><option>CONTAINED</option><option>RESOLVED</option>
+                        </select>
+                        <select id="inc-sort" class="px-2.5 py-1.5 rounded-md bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs">
+                            <option value="risk">SORT: RISK</option>
+                            <option value="recent">SORT: RECENT</option>
+                            <option value="confidence">SORT: CONFIDENCE</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs" id="inc-table">
+                        <thead>
+                            <tr class="text-left text-slate-400 dark:text-slate-500 font-mono text-[10px] uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                                <th class="py-2 pr-3">ID</th><th class="py-2 pr-3">Location</th>
+                                <th class="py-2 pr-3">Classification</th><th class="py-2 pr-3">Risk</th>
+                                <th class="py-2 pr-3">Status</th><th class="py-2 pr-3">FRP</th>
+                                <th class="py-2 pr-3">Conf.</th><th class="py-2"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="inc-table-body">
+                            <tr><td colspan="8" class="py-6 text-center text-slate-400 font-mono text-xs">Loading incident intelligence&hellip;</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Detection Feed (demo playback of the real pipeline) -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-4">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                    <div class="flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4 text-emerald-500"></i> Pipeline Detection Feed</div>
+                    <span class="font-mono text-[10px] text-slate-400" title="Chronological replay of the classification pipeline over cached scenarios">DEMO PLAYBACK</span>
+                </div>
+                <div id="detection-feed" class="mt-3 space-y-1.5 font-mono text-[11px] max-h-56 overflow-y-auto">
+                    <div class="text-slate-400">Replaying pipeline events&hellip;</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Incident Detail Drawer -->
+        <div id="inc-drawer" class="hidden fixed inset-0 z-50">
+            <div class="absolute inset-0 bg-slate-950/60" onclick="closeIncDrawer()"></div>
+            <aside class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 overflow-y-auto shadow-2xl">
+                <div class="sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 p-4 flex items-center justify-between z-10">
+                    <div>
+                        <div class="font-mono text-[11px] text-slate-400" id="dw-id">—</div>
+                        <div class="font-bold text-slate-900 dark:text-white" id="dw-title">—</div>
+                    </div>
+                    <button onclick="closeIncDrawer()" aria-label="Close incident detail" class="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="p-4 space-y-5 text-xs" id="dw-body"></div>
+            </aside>
         </div>
 
         <!-- ========================================== -->
@@ -519,6 +584,34 @@
                     <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400 text-xs font-bold font-mono">
                         <span class="w-2 h-2 rounded-full bg-orange-500 live-pulse"></span>
                         <span>TACTICAL STATUS</span>
+        <!-- PORTAL 3: RESPONDER OPERATIONS VIEW        -->
+        <!-- ========================================== -->
+        <div id="portal-responder" class="hidden space-y-6">
+            <!-- Responder Header Terminal Banner -->
+            <div class="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-5 sm:p-6">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2 text-xs font-mono font-bold tracking-wider text-orange-600 dark:text-orange-400 uppercase">
+                            <i data-lucide="radio" class="w-4 h-4 text-orange-500 animate-pulse"></i>
+                            <span>NDRF UNIT 3 &bull; TACTICAL FIELD TERMINAL</span>
+                        </div>
+                        <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+                            Responder Operations
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                            Direct satellite telemetry, access corridors &amp; mission dispatch state.
+                        </p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <label for="resp-incident-select" class="font-bold text-slate-700 dark:text-slate-300">Active Task:</label>
+                        <select id="resp-incident-select" onchange="onResponderIncidentChange(this.value)" class="px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-bold text-xs shadow-xs focus:ring-2 focus:ring-orange-500 outline-hidden">
+                            <option value="INC-2026-0044">INC-2026-0044 &bull; Angul Thermal Plant (Critical)</option>
+                            <option value="INC-2026-0042">INC-2026-0042 &bull; Similipal Forest (High)</option>
+                        </select>
+                        <span class="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold font-mono flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> FIELD READY
+                        </span>
                     </div>
                 </div>
             </div>
@@ -588,6 +681,124 @@
                                 <div class="text-slate-400 text-[11px]">Select an incident to inspect audit log.</div>
                             </div>
                         </div>
+            <!-- Active Incident Tactical Card -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-5 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <div>
+                        <span class="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold block">Assigned Mission</span>
+                        <h3 class="text-xl font-black text-slate-900 dark:text-white" id="resp-title">Angul Thermal Power &amp; Coal Storage Yard</h3>
+                        <p class="text-xs text-slate-600 dark:text-slate-400" id="resp-location">Angul Industrial Belt, Odisha &bull; Target Sector 4</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="resp-badge-type" class="px-2.5 py-1 rounded-md bg-red-100 dark:bg-red-950/70 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs font-bold font-mono">INDUSTRIAL FIRE</span>
+                        <span id="resp-badge-severity" class="px-2.5 py-1 rounded-md bg-red-600 text-white text-xs font-black font-mono">CRITICAL</span>
+                    </div>
+                </div>
+
+                <!-- Telemetry 4-Pack (Tactical Specs) -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
+                        <span class="text-[10px] uppercase font-mono text-slate-500 dark:text-slate-400 font-bold block">Target GPS</span>
+                        <div class="text-sm font-black font-mono text-slate-900 dark:text-white mt-0.5" id="resp-coords">20.8420°N &bull; 85.1020°E</div>
+                        <button onclick="copyResponderCoords()" class="mt-1.5 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+                            <i data-lucide="copy" class="w-3 h-3"></i> Copy GPS
+                        </button>
+                    </div>
+
+                    <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
+                        <span class="text-[10px] uppercase font-mono text-slate-500 dark:text-slate-400 font-bold block">Thermal Power (FRP)</span>
+                        <div class="text-sm font-black font-mono text-orange-600 dark:text-orange-400 mt-0.5" id="resp-frp">710.0 MW</div>
+                        <span class="text-[10px] text-slate-500 font-medium">VIIRS Overpass Conf: 96%</span>
+                    </div>
+
+                    <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
+                        <span class="text-[10px] uppercase font-mono text-slate-500 dark:text-slate-400 font-bold block">Hazard Rating</span>
+                        <div class="text-sm font-black font-mono text-red-600 dark:text-red-400 mt-0.5" id="resp-hazard">HIGH (Risk 96/100)</div>
+                        <span class="text-[10px] text-slate-500 font-medium">Secondary blast / coal dust</span>
+                    </div>
+
+                    <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
+                        <span class="text-[10px] uppercase font-mono text-slate-500 dark:text-slate-400 font-bold block">Surface Wind Vector</span>
+                        <div class="text-sm font-black font-mono text-blue-600 dark:text-blue-400 mt-0.5" id="resp-wind">NE at 20 km/h</div>
+                        <span class="text-[10px] text-slate-500 font-medium">Plume moving toward NH-55</span>
+                    </div>
+                </div>
+
+                <!-- Tactical Access Corridor -->
+                <div class="p-4 rounded-xl bg-orange-50/60 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900/60 space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-orange-900 dark:text-orange-300 flex items-center gap-1.5 font-mono uppercase tracking-wider">
+                            <i data-lucide="navigation" class="w-4 h-4 text-orange-500"></i> Tactical Ingress Corridor
+                        </span>
+                        <span class="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200" id="resp-access-dist">2.4 KM ACCESS</span>
+                    </div>
+                    <p class="text-xs text-slate-800 dark:text-slate-200 leading-relaxed" id="resp-access-notes">
+                        Approach via <strong>NH-55 East Corridor Bypass &rarr; Gate 4 Road</strong>. Do not use Northern Coal Yard approach due to heavy smoke plume. Hydrant hookup available at Sector 4 Perimeter Gate.
+                    </p>
+                    <div class="pt-2 flex flex-wrap gap-2 text-xs">
+                        <button onclick="openNavigationRoute()" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-bold hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs flex items-center gap-1.5">
+                            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-orange-500"></i> Open Coordinates in Maps
+                        </button>
+                        <button onclick="alert('Calling Angul Emergency Dispatch (1078)...')" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-bold hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs flex items-center gap-1.5">
+                            <i data-lucide="phone-call" class="w-3.5 h-3.5 text-blue-500"></i> Radio Command (1078)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Operational State Machine Action Card -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-5 space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 text-xs">
+                    <div>
+                        <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold block">Lifecycle Control</span>
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">Field Status Progression</h4>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[11px] font-mono text-slate-500">Current state:</span>
+                        <span id="resp-current-state-pill" class="px-2.5 py-0.5 rounded text-xs font-mono font-bold text-white bg-amber-500">DISPATCHED</span>
+                    </div>
+                </div>
+
+                <!-- Visual Step-by-Step State Flow Pipeline -->
+                <div class="grid grid-cols-2 sm:grid-cols-6 gap-2 text-center text-xs font-mono" id="resp-steps-container">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Primary Action Transition (Single Prominent Button) -->
+                <div class="pt-2" id="resp-action-container">
+                    <!-- Dynamically displays only the NEXT valid action button -->
+                </div>
+            </div>
+
+            <!-- Field Situation Report (SitRep) -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-5 space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="clipboard-pen" class="w-4 h-4 text-blue-500"></i>
+                        <span>Field Situation Report (SitRep)</span>
+                    </div>
+                    <span class="font-mono text-slate-400 text-[11px]">Direct sync to Command Center</span>
+                </div>
+
+                <div class="space-y-2">
+                    <textarea id="resp-sitrep-input" rows="2" placeholder="Enter tactical sitrep (e.g., 2 water tenders deployed on south perimeter, wind gusting 22 km/h, evacuating residential block B)..." class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500 outline-hidden"></textarea>
+                    <div class="flex items-center justify-between gap-3">
+                        <button onclick="submitResponderSitrep()" class="px-5 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-sm flex items-center gap-2 transition-transform active:scale-98">
+                            <i data-lucide="send" class="w-3.5 h-3.5"></i> Transmit SitRep to Command
+                        </button>
+                        <span id="resp-sitrep-status" class="text-xs font-mono text-emerald-600 dark:text-emerald-400"></span>
+                    </div>
+                </div>
+
+                <!-- SitRep History Log -->
+                <div class="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2" id="resp-sitrep-log">
+                    <div class="text-[11px] font-mono text-slate-500 dark:text-slate-400">Recent SitReps logged:</div>
+                    <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 text-xs">
+                        <div class="flex justify-between font-mono text-[10px] text-slate-400">
+                            <span>UNIT 3 &bull; OD-05-G-4421</span>
+                            <span>10 mins ago</span>
+                        </div>
+                        <div class="text-slate-700 dark:text-slate-300 mt-1 font-medium">Initial response vehicle on site. Establishing containment line along rail siding.</div>
                     </div>
                 </div>
             </div>
@@ -596,6 +807,8 @@
 
         <!-- ========================================== -->
         <!-- PORTAL 3: CITIZEN SERVICES VIEW            -->
+        <!-- ========================================== -->
+        <!-- PORTAL 4: CITIZEN SERVICES VIEW            -->
         <!-- ========================================== -->
         <div id="portal-citizen" class="hidden space-y-6">
             <!-- Hero Photo Banner with Languages -->

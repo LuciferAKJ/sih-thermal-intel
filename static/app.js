@@ -128,6 +128,60 @@ async function apiFetch(url, options = {}) {
             const errCode = data.error?.code || `HTTP_${resp.status}`;
             const errMsg = data.error?.message || data.detail || 'API request rejected';
             throw new Error(`[${errCode}] ${errMsg}`);
+document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+    // deep link: /app?portal=citizen|command|ntro|responder (from landing page CTAs)
+    const qp = new URLSearchParams(location.search).get('portal');
+    if (['ntro', 'command', 'responder', 'citizen'].includes(qp)) switchPortal(qp);
+    renderNtroIncidents();
+    renderCmdZones();
+    selectZone('angul');
+    selectNtroIncident('INC-2846');
+    loadLiveStats();
+});
+
+// Real platform stats from the backend classification pipeline
+async function loadLiveStats() {
+    try {
+        const r = await fetch('/api/stats');
+        const s = await r.json();
+        if (s.error) return;
+        const el = (id) => document.getElementById(id);
+        if (el('ntro-hotspots-count')) el('ntro-hotspots-count').textContent = s.hotspots_analyzed;
+        const autoEl = el('ntro-auto-classified');
+        if (autoEl) autoEl.textContent = s.auto_classified;
+        const rateEl = el('ntro-classification-rate');
+        if (rateEl) rateEl.textContent = `${s.classification_rate}% classification rate`;
+        if (el('ntro-critical-count')) el('ntro-critical-count').textContent = s.critical_alerts;
+    } catch { /* stats are decorative fallback if offline */ }
+}
+
+// Export the last pipeline run as GeoJSON (PS deliverable: data output)
+let lastPipelineFC = null;
+function downloadGeoJSON() {
+    if (!lastPipelineFC) { alert('Run the AI Pipeline first, then export.'); return; }
+    const blob = new Blob([JSON.stringify(lastPipelineFC, null, 2)], { type: 'application/geo+json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'aerothermal_classified_hotspots.geojson';
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+// Portal Switching
+function switchPortal(portalName) {
+    currentPortal = portalName;
+    const portals = ['ntro', 'command', 'responder', 'citizen'];
+    portals.forEach(p => {
+        const el = document.getElementById(`portal-${p}`);
+        const tab = document.getElementById(`tab-${p}`);
+        if (!el || !tab) return;
+        if (p === portalName) {
+            el.classList.remove('hidden');
+            tab.className = "flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200/80 dark:border-slate-700 transition-all font-bold";
+        } else {
+            el.classList.add('hidden');
+            tab.className = "flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all font-semibold";
         }
         return data;
     } catch (err) {
@@ -187,6 +241,21 @@ async function loadIncidents() {
         console.warn('Failed to load incidents:', err.message);
         return [];
     }
+    try {
+        const url = new URL(window.location);
+        url.searchParams.set('portal', portalName);
+        window.history.replaceState({}, '', url);
+    } catch { /* ignore on non-browser environments */ }
+
+    const footerLabel = document.getElementById('txt-footer-portal-label');
+    if (footerLabel) {
+        if (portalName === 'ntro') footerLabel.textContent = "NTRO Intelligence Portal";
+        else if (portalName === 'command') footerLabel.textContent = "Government Command Dashboard";
+        else if (portalName === 'responder') footerLabel.textContent = "Responder Operations Field Terminal";
+        else footerLabel.textContent = "Citizen Services Portal";
+    }
+
+    if (window.lucide) lucide.createIcons();
 }
 
 function updateNtroStatCards() {
